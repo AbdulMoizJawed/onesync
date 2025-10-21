@@ -86,6 +86,7 @@ interface PaymentModalProps {
 function PaymentModal({ beat, producer, onClose, onSuccess }) {
   const stripe = useStripe()
   const elements = useElements()
+   const { user, loading: authLoading } = useAuth()
 
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
@@ -118,7 +119,9 @@ function PaymentModal({ beat, producer, onClose, onSuccess }) {
     setError(null)
 
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      // const { data: { user: authUser } } = await supabase.auth.getUser()
+      const authUser = user
+      
       if (!authUser) {
         setError("You must be logged in to purchase")
         setLoading(false)
