@@ -12,9 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { supabase } from '@/lib/auth'
 import { isAdminUser } from '@/utils/admin'
-import {
-  Users,
-  Music,
+import { 
+  Users, 
+  Music, 
   Database,
   ExternalLink,
   BarChart3,
@@ -52,17 +52,13 @@ import {
   Sparkles,
   Calendar,
   User,
-  Mail,
-  AlertTriangle,
-  X,
-  Check
+  Mail
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { DialogClose, DialogDescription, DialogTrigger } from '@radix-ui/react-dialog'
-import { Label } from '@/components/ui/label'
-import Image from 'next/image'
+import AdminBeatUpload from '@/components/beats/AdminBeatUpload'
+import AdminBeatManagement from '@/components/beats/AdminBeatManagement'
 
 interface AdminStats {
   totalUsers: number
@@ -217,7 +213,7 @@ interface TakedownRequest {
 export default function AdminDashboard() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-
+  
   // Early return if no Supabase client
   if (!supabase) {
     return (
@@ -229,7 +225,7 @@ export default function AdminDashboard() {
       </div>
     )
   }
-
+  
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [releases, setReleases] = useState<Release[]>([])
@@ -261,63 +257,10 @@ export default function AdminDashboard() {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null)
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null)
   const [audioLoading, setAudioLoading] = useState<string | null>(null)
-  const [rejectionModal, setRejectionModal] = useState<{ open: boolean, releaseId: string, releaseTitle: string }>({ open: false, releaseId: '', releaseTitle: '' })
+  const [rejectionModal, setRejectionModal] = useState<{open: boolean, releaseId: string, releaseTitle: string}>({open: false, releaseId: '', releaseTitle: ''})
   const [rejectionReason, setRejectionReason] = useState('')
-  const [editRejectionModal, setEditRejectionModal] = useState<{ open: boolean, editId: string, releaseTitle: string }>({ open: false, editId: '', releaseTitle: '' })
+  const [editRejectionModal, setEditRejectionModal] = useState<{open: boolean, editId: string, releaseTitle: string}>({open: false, editId: '', releaseTitle: ''})
   const [editRejectionReason, setEditRejectionReason] = useState('')
-  const [userTakedownRequests, setUserTakedownRequests] = useState<any[]>([])
-  const [selectedTakedown, setSelectedTakedown] = useState<any>(null)
-  const [takedownAction, setTakedownAction] = useState<'approve' | 'reject' | null>(null)
-  const [takedownAdminNotes, setTakedownAdminNotes] = useState('')
-
-  const fetchUserTakedownRequests = async () => {
-    try {
-      if (!supabase) {
-        console.error('Supabase client not available')
-        return
-      }
-
-      // Fetch takedown requests with related data
-      const { data: requests, error } = await supabase
-        .from('user_takedown_requests')
-        .select(`
-        *,
-        profiles:user_id (
-          id,
-          username,
-          full_name,
-          email
-        ),
-        releases:release_id (
-          id,
-          title,
-          artist_name,
-          status,
-          platforms,
-          cover_art_url
-        )
-      `)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching user takedown requests:', error)
-        setTakedownRequests([])
-        setUserTakedownRequests([])
-        return
-      }
-
-      // Set both states to the same data (removing duplicate state management)
-      const enrichedRequests = requests || []
-      setTakedownRequests(enrichedRequests)
-      setUserTakedownRequests(enrichedRequests)
-
-      console.log('Fetched takedown requests:', enrichedRequests.length)
-    } catch (error) {
-      console.error('Unexpected error fetching takedown requests:', error)
-      setTakedownRequests([])
-      setUserTakedownRequests([])
-    }
-  }
 
   // Admin authentication check
   useEffect(() => {
@@ -326,7 +269,7 @@ export default function AdminDashboard() {
         router.push('/auth/login?redirect=/admin')
         return
       }
-
+      
       if (!isAdminUser(user)) {
         router.push('/')
         return
@@ -339,6 +282,8 @@ export default function AdminDashboard() {
       fetchAllData()
     }
   }, [user])
+
+
 
   // Audio playback handler
   const handlePlayPause = async (releaseId: string, audioUrl: string | null) => {
@@ -401,7 +346,7 @@ export default function AdminDashboard() {
               console.error("Error starting playback:", error)
               setCurrentlyPlaying(null)
               setAudioLoading(null)
-
+              
               if (error.name === 'NotAllowedError') {
                 toast.error("Playback blocked - please interact with the page first")
               } else if (error.name === 'NotSupportedError') {
@@ -429,11 +374,11 @@ export default function AdminDashboard() {
           return
         }
 
-        const suspensionType = confirm('Permanent suspension? (Cancel for temporary 30-day suspension)')
-          ? 'permanent'
+        const suspensionType = confirm('Permanent suspension? (Cancel for temporary 30-day suspension)') 
+          ? 'permanent' 
           : 'temporary'
 
-        const expiresAt = suspensionType === 'temporary'
+        const expiresAt = suspensionType === 'temporary' 
           ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           : null
 
@@ -455,7 +400,7 @@ export default function AdminDashboard() {
 
         // Send notification to user
         if (!supabase) return
-
+        
         const { data: user } = await supabase
           .from('profiles')
           .select('full_name, email')
@@ -473,7 +418,7 @@ export default function AdminDashboard() {
       } else {
         // Deactivate all suspensions for this user
         if (!supabase) return
-
+        
         const { error } = await supabase
           .from('user_suspensions')
           .update({ is_active: false, updated_at: new Date().toISOString() })
@@ -505,10 +450,14 @@ export default function AdminDashboard() {
     toast.info('Switched to notifications tab to send message')
   }
 
+      const handleUploadComplete = () => {
+    setActiveTab('manage')
+  }
+
   const handleViewUserReleases = async (userId: string) => {
     try {
       if (!supabase) return
-
+      
       const { data, error } = await supabase
         .from('releases')
         .select('*')
@@ -529,7 +478,7 @@ export default function AdminDashboard() {
   const handleViewUserPayouts = async (userId: string) => {
     try {
       if (!supabase) return
-
+      
       const { data, error } = await supabase
         .from('payout_requests')
         .select('*')
@@ -550,13 +499,12 @@ export default function AdminDashboard() {
     try {
       await Promise.all([
         fetchStats(),
-        // fetchUsers(),
+        fetchUsers(),
         fetchReleases(),
         fetchPayoutRequests(),
         fetchTakedownRequests(),
         fetchReleaseEdits(),
         fetchSupportTickets(),
-        fetchUserTakedownRequests(),
         fetchPublishingRequests(),
         fetchPlaylistCampaigns(),
         fetchBeats(),
@@ -579,9 +527,9 @@ export default function AdminDashboard() {
         console.error('No Supabase client available')
         return
       }
-
+      
       const [
-        usersResult, releasesResult, payoutsResult, pendingReleasesResult,
+        usersResult, releasesResult, payoutsResult, pendingReleasesResult, 
         supportResult, publishingResult, campaignsResult, beatsResult,
         masteringResult, forumFlagsResult
       ] = await Promise.all([
@@ -653,7 +601,7 @@ export default function AdminDashboard() {
         .limit(50)
 
       if (error) throw error
-
+      
       // Check suspension status for each user
       const usersWithStatus = await Promise.all(
         (data || []).map(async (user) => {
@@ -673,7 +621,7 @@ export default function AdminDashboard() {
           }
         })
       )
-
+      
       setUsers(usersWithStatus)
     } catch (error) {
       console.error('Error fetching users:', error)
@@ -704,214 +652,29 @@ export default function AdminDashboard() {
     }
   }
 
-  // Update the fetchTakedownRequests function
   const fetchTakedownRequests = async () => {
     try {
-      if (!supabase) return
-
-      // Fetch takedown requests
-      const { data: requests, error } = await supabase
-        .from('user_takedown_requests')
+      const { data, error } = await supabase
+        .from('takedown_requests')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('Error fetching takedown requests:', error)
-        setTakedownRequests([])
-        return
-      }
-
-      if (!requests || requests.length === 0) {
-        setTakedownRequests([])
-        console.log('log5 - No takedown requests found')
-        return
-      }
-
-      // Fetch related user profiles
-      const userIds = [...new Set(requests.map(r => r.user_id).filter(Boolean))]
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, email')
-        .in('id', userIds)
-
-      // Fetch related releases
-      const releaseIds = [...new Set(requests.map(r => r.release_id).filter(Boolean))]
-      const { data: releases } = await supabase
-        .from('releases')
-        .select('id, title, artist_name, status, platforms, cover_art_url')
-        .in('id', releaseIds)
-
-      // Combine the data
-      const enrichedRequests = requests.map(request => ({
-        ...request,
-        profiles: profiles?.find(p => p.id === request.user_id) || null,
-        releases: releases?.find(r => r.id === request.release_id) || null
-      }))
-
-      setTakedownRequests(enrichedRequests)
-      console.log('log5 - User Takedown Requests:', enrichedRequests)
+      if (error) throw error
+      setTakedownRequests(data || [])
     } catch (error) {
       console.error('Error fetching takedown requests:', error)
-      setTakedownRequests([])
-    }
-  }
-
-  const handleTakedownAction = async (requestId: string, status: string, action?: string) => {
-    try {
-      if (!supabase) {
-        toast.error('System error - please try again')
-        return
-      }
-
-      // Get the takedown request details first
-      const { data: takedownRequest, error: fetchError } = await supabase
-        .from('user_takedown_requests')
-        .select(`
-        *,
-        releases:release_id (
-          id,
-          title,
-          artist_name,
-          user_id
-        )
-      `)
-        .eq('id', requestId)
-        .single()
-
-      if (fetchError || !takedownRequest) {
-        console.error('Error fetching takedown request:', fetchError)
-        toast.error('Failed to fetch takedown request details')
-        return
-      }
-
-      // Prepare update data
-      const updateData: any = {
-        status,
-        admin_notes: takedownAdminNotes || null,
-        updated_at: new Date().toISOString()
-      }
-
-      // Add completion timestamp if completed
-      if (status === 'completed') {
-        updateData.completed_at = new Date().toISOString()
-      }
-
-      // Update the takedown request status
-      const { error: updateError } = await supabase
-        .from('user_takedown_requests')
-        .update(updateData)
-        .eq('id', requestId)
-
-      if (updateError) {
-        console.error('Error updating takedown request:', updateError)
-        toast.error('Failed to update takedown request')
-        return
-      }
-
-      // Handle release status updates based on takedown action
-      if (takedownRequest.release_id) {
-        if (action === 'takedown' && status === 'in_progress') {
-          // Mark release as being taken down
-          const { error: releaseUpdateError } = await supabase
-            .from('releases')
-            .update({
-              status: 'takedown_in_progress',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', takedownRequest.release_id)
-
-          if (releaseUpdateError) {
-            console.error('Error updating release status:', releaseUpdateError)
-          }
-        } else if (status === 'completed') {
-          // Mark release as taken down
-          const { error: releaseUpdateError } = await supabase
-            .from('releases')
-            .update({
-              status: 'taken_down',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', takedownRequest.release_id)
-
-          if (releaseUpdateError) {
-            console.error('Error marking release as taken down:', releaseUpdateError)
-          }
+      // Fallback to mock data
+      setTakedownRequests([
+        {
+          id: '1',
+          title: 'Sample Song',
+          artist: 'Sample Artist',
+          complainant: 'Rights Holder Inc.',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          reason: 'Copyright infringement claim'
         }
-      }
-
-      // Create notification for the user
-      const notificationData = getNotificationDataForStatus(status, takedownRequest, takedownAdminNotes)
-
-      if (notificationData.title && notificationData.message) {
-        const { error: notificationError } = await supabase
-          .from('notifications')
-          .insert({
-            user_id: takedownRequest.user_id,
-            type: notificationData.type,
-            title: notificationData.title,
-            message: notificationData.message,
-            read: false,
-            created_at: new Date().toISOString()
-          })
-
-        if (notificationError) {
-          console.error('Error creating notification:', notificationError)
-        }
-      }
-
-      // Success feedback
-      const statusLabel = status.replace('_', ' ')
-      toast.success(`Takedown request ${statusLabel} successfully`)
-
-      // Reset form state
-      setSelectedTakedown(null)
-      setTakedownAction(null)
-      setTakedownAdminNotes('')
-
-      // Refresh the data
-      await Promise.all([
-        fetchUserTakedownRequests(),
-        fetchReleases(),
-        fetchStats()
       ])
-
-    } catch (error) {
-      console.error('Error updating takedown request:', error)
-      toast.error('Failed to update takedown request')
-    }
-  }
-
-  const getNotificationDataForStatus = (
-    status: string,
-    request: any,
-    adminNotes: string
-  ) => {
-    const releaseTitle = request.release_title || 'your release'
-
-    switch (status) {
-      case 'in_progress':
-        return {
-          type: 'takedown_in_progress',
-          title: 'Takedown Request In Progress',
-          message: `Your takedown request for "${releaseTitle}" is now being processed. We'll notify you once complete.`
-        }
-
-      case 'completed':
-        return {
-          type: 'takedown_completed',
-          title: 'Takedown Completed',
-          message: `Your release "${releaseTitle}" has been successfully taken down from distribution platforms.`
-        }
-
-      case 'rejected':
-        return {
-          type: 'takedown_rejected',
-          title: 'Takedown Request Rejected',
-          message: `Your takedown request for "${releaseTitle}" has been rejected.${adminNotes ? ' Reason: ' + adminNotes : ''}`
-        }
-
-      default:
-        return { type: '', title: '', message: '' }
     }
   }
 
@@ -1071,7 +834,7 @@ export default function AdminDashboard() {
               status: 'sent',
               created_at: new Date().toISOString()
             })
-
+          
           if (altError) throw altError
         } catch (altErr) {
           console.error('Alternative notification method also failed:', altErr)
@@ -1177,73 +940,132 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleReleaseAction = async (releaseId: string, action: 'approve' | 'reject', reason?: string) => {
-    try {
-      console.log(`Starting ${action} action for release:`, releaseId)
-
-      // Get release details first
-      const { data: release, error: fetchError } = await supabase
-        .from('releases')
-        .select('*')
-        .eq('id', releaseId)
-        .single()
-
-      if (fetchError) {
-        console.error('Error fetching release:', fetchError)
-        throw new Error(`Failed to fetch release: ${fetchError.message}`)
-      }
-
-      if (!release) {
-        throw new Error('Release not found')
-      }
-
-      console.log('Release found, calling API...')
-
-      const response = await fetch('/api/admin/release-queue', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: releaseId, action, reason })
-      })
-
-      console.log('API response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('API error:', errorData)
-        throw new Error(errorData.error || `Failed to ${action} release`)
-      }
-
-      const result = await response.json()
-      console.log('API result:', result)
-
-      // Send notification to user
-      try {
-        await sendUserNotification(
-          release.user_id,
-          `Release ${action === 'approve' ? 'Approved' : 'Rejected'}`,
-          action === 'approve'
-            ? `Your release "${release.title}" has been approved and is now live on the platform!`
-            : `Your release "${release.title}" has been rejected. ${reason ? `Reason: ${reason}` : 'Please review and resubmit.'}`,
-          action === 'approve' ? 'release' : 'warning'
-        )
-        console.log('Notification sent successfully')
-      } catch (notifError) {
-        console.error('Error sending notification:', notifError)
-        // Don't fail the whole action if notification fails
-      }
-
-      toast.success(`Release ${action}d successfully!`)
-
-      // Refresh data
-      await fetchReleases()
-      await fetchStats()
-
-      console.log('Data refreshed successfully')
-    } catch (error) {
-      console.error(`Error ${action}ing release:`, error)
-      toast.error(error instanceof Error ? error.message : `Failed to ${action} release`)
+const handleReleaseAction = async (releaseId: string, action: 'approve' | 'reject', reason?: string) => {
+  try {
+    console.log('🚀 Starting', action, 'for release:', releaseId)
+    
+    if (!supabase) {
+      throw new Error('Supabase client not available')
     }
+
+    // Fetch release details first
+    const { data: releases, error: fetchError } = await supabase
+      .from('releases')
+      .select('*')
+      .eq('id', releaseId)
+      .limit(1)
+
+    if (fetchError) {
+      console.error('❌ Fetch error:', fetchError)
+      throw new Error(`Failed to fetch release: ${fetchError.message}`)
+    }
+
+    if (!releases || releases.length === 0) {
+      throw new Error('Release not found')
+    }
+
+    const release = releases[0]
+    console.log('✅ Release found:', release.title, '| Current Status:', release.status)
+
+    // Determine new status
+    const newStatus = action === 'approve' ? 'approved' : 'rejected'
+    
+    // 🔥 BUILD UPDATE - ONLY EXISTING COLUMNS!
+    const updateData: any = {
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    }
+
+    // ✅ Store rejection reason in metadata (since admin_notes column doesn't exist)
+    if (reason) {
+      const existingMetadata = release.metadata || {}
+      updateData.metadata = {
+        ...existingMetadata,
+        rejection_reason: reason,
+        rejected_at: new Date().toISOString(),
+        rejected_by: user?.id || 'admin'
+      }
+    }
+
+    // ✅ Store approval info in metadata
+    if (action === 'approve') {
+      const existingMetadata = release.metadata || {}
+      updateData.metadata = {
+        ...existingMetadata,
+        approved_at: new Date().toISOString(),
+        approved_by: user?.id || 'admin'
+      }
+    }
+
+    console.log('📝 Updating with:', updateData)
+
+    // 🔥 DIRECT DATABASE UPDATE
+    const { data: updated, error: updateError } = await supabase
+      .from('releases')
+      .update(updateData)
+      .eq('id', releaseId)
+      .select()
+
+    if (updateError) {
+      console.error('❌ Update error:', updateError)
+      throw new Error(`Database update failed: ${updateError.message}`)
+    }
+
+    if (!updated || updated.length === 0) {
+      throw new Error('Update returned no data')
+    }
+
+    console.log('✅ Database updated! New status:', updated[0].status)
+
+    // Send notification to user
+    try {
+      await sendUserNotification(
+        release.user_id,
+        `Release ${action === 'approve' ? 'Approved' : 'Rejected'}`,
+        action === 'approve'
+          ? `Your release "${release.title}" has been approved and is now live!`
+          : `Your release "${release.title}" has been rejected. ${reason ? `Reason: ${reason}` : 'Please review and resubmit.'}`,
+        action === 'approve' ? 'release' : 'warning'
+      )
+      console.log('✅ Notification sent')
+    } catch (notifError) {
+      console.error('⚠️ Notification error (non-critical):', notifError)
+    }
+
+    // 🎉 SUCCESS TOAST
+    toast.success(`Release ${action === 'approve' ? 'approved' : 'rejected'} successfully!`, {
+      description: `"${release.title}" status changed to ${newStatus}`,
+      duration: 4000
+    })
+    
+    // 🔄 Refresh UI
+    console.log('🔄 Refreshing UI...')
+    
+    // Update the release in local state immediately for instant feedback
+    setReleases(prevReleases => 
+      prevReleases.map(r => 
+        r.id === releaseId ? { ...r, ...updateData } : r
+      )
+    )
+    
+    // Fetch fresh data in background
+    await Promise.all([
+      fetchReleases(),
+      fetchStats()
+    ])
+    
+    console.log('✅ Complete!')
+    
+  } catch (error: any) {
+    console.error('❌ Error:', error)
+    
+    // 🚨 ERROR TOAST
+    toast.error(`Failed to ${action} release`, {
+      description: error.message || 'An unexpected error occurred',
+      duration: 5000
+    })
   }
+}
 
   const handlePayoutAction = async (payoutId: string, status: 'approved' | 'rejected', notes?: string) => {
     try {
@@ -1267,7 +1089,7 @@ export default function AdminDashboard() {
         await sendUserNotification(
           payout.user_id,
           `Payout Request ${status === 'approved' ? 'Approved' : 'Rejected'}`,
-          status === 'approved'
+          status === 'approved' 
             ? `Your payout request of $${payout.amount} has been approved and will be processed soon.`
             : `Your payout request of $${payout.amount} has been rejected. ${notes ? `Reason: ${notes}` : ''}`,
           status === 'approved' ? 'payout' : 'warning'
@@ -1294,7 +1116,7 @@ export default function AdminDashboard() {
     try {
       // Mock notification sending - would be replaced with real API
       await new Promise(resolve => setTimeout(resolve, 1000))
-
+      
       toast.success('Notification sent successfully')
       setNotificationForm({
         user_id: '',
@@ -1340,7 +1162,7 @@ export default function AdminDashboard() {
     }
 
     await handleReleaseAction(rejectionModal.releaseId, 'reject', rejectionReason)
-    setRejectionModal({ open: false, releaseId: '', releaseTitle: '' })
+    setRejectionModal({open: false, releaseId: '', releaseTitle: ''})
     setRejectionReason('')
   }
 
@@ -1351,7 +1173,7 @@ export default function AdminDashboard() {
     }
 
     await handleEditAction(editRejectionModal.editId, 'rejected', editRejectionReason)
-    setEditRejectionModal({ open: false, editId: '', releaseTitle: '' })
+    setEditRejectionModal({open: false, editId: '', releaseTitle: ''})
     setEditRejectionReason('')
   }
 
@@ -1384,7 +1206,7 @@ export default function AdminDashboard() {
       // Send notification to user
       let notificationTitle = ''
       let notificationMessage = ''
-
+      
       switch (status) {
         case 'in_progress':
           notificationTitle = 'Support Ticket In Progress'
@@ -1481,150 +1303,150 @@ export default function AdminDashboard() {
         <div className="mb-4 sm:mb-6">
           <h2 className="text-white text-base sm:text-lg font-semibold mb-2 sm:mb-3 px-2 sm:px-0">Quick Stats</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Total Users</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.totalUsers || 0}</p>
-                  </div>
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Total Users</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.totalUsers || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Total Releases</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.totalReleases || 0}</p>
-                  </div>
-                  <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-green-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Total Releases</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.totalReleases || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-green-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Pending Releases</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.pendingReleases || 0}</p>
-                  </div>
-                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-orange-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Pending Releases</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.pendingReleases || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-orange-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Payout Requests</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.payoutRequests || 0}</p>
-                  </div>
-                  <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Payout Requests</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.payoutRequests || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Support Tickets</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.supportTickets || 0}</p>
-                  </div>
-                  <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Support Tickets</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.supportTickets || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Publishing Requests</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.publishingRequests || 0}</p>
-                  </div>
-                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Publishing Requests</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.publishingRequests || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Row 2 Cards */}
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Playlist Campaigns</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.playlistCampaigns || 0}</p>
-                  </div>
-                  <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-pink-400 flex-shrink-0" />
+          {/* Row 2 Cards */}
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Playlist Campaigns</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.playlistCampaigns || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-pink-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Beats Pending</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.beatsPendingApproval || 0}</p>
-                  </div>
-                  <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-cyan-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Beats Pending</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.beatsPendingApproval || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-cyan-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Mastering Jobs</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.activeMasteringJobs || 0}</p>
-                  </div>
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Mastering Jobs</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.activeMasteringJobs || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Forum Flags</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.forumFlags || 0}</p>
-                  </div>
-                  <Flag className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-red-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Forum Flags</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats?.forumFlags || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Flag className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-red-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">AI Service Cost</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">${(stats?.aiServiceCost || 0).toFixed(2)}</p>
-                  </div>
-                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">AI Service Cost</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">${(stats?.aiServiceCost || 0).toFixed(2)}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Platform Revenue</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">${(stats?.platformRevenue || 0).toFixed(0)}</p>
-                  </div>
-                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-emerald-400 flex-shrink-0" />
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">Platform Revenue</p>
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">${(stats?.platformRevenue || 0).toFixed(0)}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-emerald-400 flex-shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
           </div>
         </div>
 
@@ -1632,66 +1454,72 @@ export default function AdminDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
             <TabsList className="bg-gray-900 border-gray-800 inline-flex w-auto min-w-full gap-1 sm:gap-2 p-1">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="releases" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Releases</span>
-              </TabsTrigger>
-              <TabsTrigger value="users" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="payouts" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Payouts</span>
-              </TabsTrigger>
-              <TabsTrigger value="takedowns" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Takedowns</span>
-              </TabsTrigger>
-              <TabsTrigger value="edits" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Edits</span>
-              </TabsTrigger>
-              <TabsTrigger value="support" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Support</span>
-              </TabsTrigger>
-              <TabsTrigger value="publishing" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Publishing</span>
-              </TabsTrigger>
-              <TabsTrigger value="campaigns" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Campaigns</span>
-              </TabsTrigger>
-              <TabsTrigger value="beats" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Beats</span>
-              </TabsTrigger>
-              <TabsTrigger value="mastering" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Mastering</span>
-              </TabsTrigger>
-              <TabsTrigger value="forum-mod" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Flag className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Forum</span>
-              </TabsTrigger>
-              <TabsTrigger value="financial" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Financial</span>
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
-                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Notify</span>
-              </TabsTrigger>
-              {/* <TabsTrigger value="user-takedowns" className="text-xs md:text-sm">
-  <AlertTriangle className="w-4 h-4 md:mr-2" />
-  <span className="hidden md:inline">User Takedowns</span>
-</TabsTrigger> */}
+            <TabsTrigger value="overview" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="releases" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Releases</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="payouts" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Payouts</span>
+            </TabsTrigger>
+            <TabsTrigger value="takedowns" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Takedowns</span>
+            </TabsTrigger>
+            <TabsTrigger value="edits" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Edits</span>
+            </TabsTrigger>
+            <TabsTrigger value="support" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Support</span>
+            </TabsTrigger>
+            <TabsTrigger value="publishing" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Publishing</span>
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Campaigns</span>
+            </TabsTrigger>
+            <TabsTrigger 
+            value="upload" 
+            className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Upload New Beat
+          </TabsTrigger>
+          <TabsTrigger 
+            value="manage" 
+            className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+          >
+            <Music className="w-4 h-4 mr-2" />
+            Manage Beats
+          </TabsTrigger>
+            <TabsTrigger value="mastering" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Mastering</span>
+            </TabsTrigger>
+            <TabsTrigger value="forum-mod" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <Flag className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Forum</span>
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Financial</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2">
+              <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Notify</span>
+            </TabsTrigger>
             </TabsList>
           </div>
 
@@ -1834,8 +1662,8 @@ export default function AdminDashboard() {
                           <div className="flex items-center space-x-4">
                             <div className="relative">
                               {release.cover_art ? (
-                                <img
-                                  src={release.cover_art}
+                                <img 
+                                  src={release.cover_art} 
                                   alt={release.title}
                                   className="w-16 h-16 rounded-lg object-cover"
                                 />
@@ -1870,13 +1698,13 @@ export default function AdminDashboard() {
                                 <Badge
                                   variant={
                                     release.status === 'approved' || release.status === 'live' ? 'default' :
-                                      release.status === 'rejected' ? 'destructive' : 'secondary'
+                                    release.status === 'rejected' ? 'destructive' : 'secondary'
                                   }
                                   className={
                                     release.status === 'live' || release.status === 'approved' ? 'bg-green-600' :
-                                      release.status === 'pending' ? 'bg-yellow-600' :
-                                        release.status === 'processing' ? 'bg-blue-600' :
-                                          'bg-red-600'
+                                    release.status === 'pending' ? 'bg-yellow-600' :
+                                    release.status === 'processing' ? 'bg-blue-600' :
+                                    'bg-red-600'
                                   }
                                 >
                                   {release.status}
@@ -1906,7 +1734,7 @@ export default function AdminDashboard() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                  onClick={() => setRejectionModal({ open: true, releaseId: release.id, releaseTitle: release.title })}
+                                  onClick={() => setRejectionModal({open: true, releaseId: release.id, releaseTitle: release.title})}
                                 >
                                   <XCircle className="w-4 h-4 mr-1" />
                                   Reject
@@ -1930,11 +1758,11 @@ export default function AdminDashboard() {
                                 try {
                                   toast.info('Preparing download package...')
                                   const response = await fetch(`/api/admin/releases/${release.id}/download`)
-
+                                  
                                   if (!response.ok) {
                                     throw new Error('Download failed')
                                   }
-
+                                  
                                   const blob = await response.blob()
                                   const url = window.URL.createObjectURL(blob)
                                   const a = document.createElement('a')
@@ -1944,7 +1772,7 @@ export default function AdminDashboard() {
                                   a.click()
                                   document.body.removeChild(a)
                                   window.URL.revokeObjectURL(url)
-
+                                  
                                   toast.success('Download started!')
                                 } catch (error) {
                                   console.error('Download error:', error)
@@ -1957,7 +1785,7 @@ export default function AdminDashboard() {
                             </Button>
                           </div>
                         </div>
-
+                        
                         {/* Expanded Details */}
                         {selectedRelease?.id === release.id && (
                           <div className="border-t border-gray-700 p-4 bg-gray-850">
@@ -1973,7 +1801,7 @@ export default function AdminDashboard() {
                                   <p><span className="text-gray-400">Release ID:</span> <span className="text-white font-mono text-xs">{release.id}</span></p>
                                 </div>
                               </div>
-
+                              
                               <div>
                                 <h4 className="text-white font-medium mb-2">Performance</h4>
                                 <div className="space-y-1 text-sm">
@@ -1991,11 +1819,11 @@ export default function AdminDashboard() {
                                   )}
                                 </div>
                               </div>
-
+                              
                               <div>
                                 <h4 className="text-white font-medium mb-2">Files & URLs</h4>
                                 <div className="space-y-1 text-sm">
-                                  <p><span className="text-gray-400">Cover Art:</span>
+                                  <p><span className="text-gray-400">Cover Art:</span> 
                                     {(release.cover_art_url || release.artwork_url) ? (
                                       <a href={release.cover_art_url || release.artwork_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 ml-1">
                                         View
@@ -2004,7 +1832,7 @@ export default function AdminDashboard() {
                                       <span className="text-gray-500 ml-1">Not available</span>
                                     )}
                                   </p>
-                                  <p><span className="text-gray-400">Audio File:</span>
+                                  <p><span className="text-gray-400">Audio File:</span> 
                                     {release.audio_url ? (
                                       <a href={release.audio_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 ml-1">
                                         Download
@@ -2017,7 +1845,7 @@ export default function AdminDashboard() {
                                   <p><span className="text-gray-400">Updated:</span> <span className="text-white">{new Date(release.updated_at).toLocaleString()}</span></p>
                                 </div>
                               </div>
-
+                              
                               {release.metadata && Object.keys(release.metadata).length > 0 && (
                                 <div className="md:col-span-2 lg:col-span-3">
                                   <h4 className="text-white font-medium mb-2">Additional Metadata</h4>
@@ -2029,8 +1857,8 @@ export default function AdminDashboard() {
                                             {key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()}:
                                           </span>
                                           <span className="text-white ml-2">
-                                            {typeof value === 'object' && value !== null
-                                              ? Array.isArray(value)
+                                            {typeof value === 'object' && value !== null 
+                                              ? Array.isArray(value) 
                                                 ? value.join(', ')
                                                 : Object.values(value).join(', ')
                                               : String(value)
@@ -2083,8 +1911,8 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {users
-                    .filter(user =>
-                      !searchTerm ||
+                    .filter(user => 
+                      !searchTerm || 
                       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       (user.full_name && user.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
                     )
@@ -2099,12 +1927,12 @@ export default function AdminDashboard() {
                               <h3 className="text-white font-medium">{user.full_name || user.email}</h3>
                               <p className="text-gray-400 text-sm">{user.email}</p>
                               <div className="flex items-center space-x-2 mt-1">
-                                <Badge
-                                  variant="outline"
+                                <Badge 
+                                  variant="outline" 
                                   className={
                                     user.status === 'active' ? 'text-green-400 border-green-400' :
-                                      user.status === 'suspended' ? 'text-red-400 border-red-400' :
-                                        'text-yellow-400 border-yellow-400'
+                                    user.status === 'suspended' ? 'text-red-400 border-red-400' :
+                                    'text-yellow-400 border-yellow-400'
                                   }
                                 >
                                   {user.status || 'Active'}
@@ -2150,7 +1978,7 @@ export default function AdminDashboard() {
                             </Button>
                           </div>
                         </div>
-
+                        
                         {/* Expanded User Details */}
                         {selectedUser?.id === user.id && (
                           <div className="border-t border-gray-700 p-4 bg-gray-850">
@@ -2165,7 +1993,7 @@ export default function AdminDashboard() {
                                   <p><span className="text-gray-400">User ID:</span> <span className="text-white font-mono text-xs">{user.id}</span></p>
                                 </div>
                               </div>
-
+                              
                               <div>
                                 <h4 className="text-white font-medium mb-2">Activity</h4>
                                 <div className="space-y-1 text-sm">
@@ -2175,7 +2003,7 @@ export default function AdminDashboard() {
                                   <p><span className="text-gray-400">Total Revenue:</span> <span className="text-white">${(user.total_revenue || 0).toFixed(2)}</span></p>
                                 </div>
                               </div>
-
+                              
                               <div>
                                 <h4 className="text-white font-medium mb-2">Actions</h4>
                                 <div className="space-y-2">
@@ -2208,7 +2036,7 @@ export default function AdminDashboard() {
                                   </Button>
                                 </div>
                               </div>
-
+                              
                               {user.metadata && Object.keys(user.metadata).length > 0 && (
                                 <div className="md:col-span-2 lg:col-span-3">
                                   <h4 className="text-white font-medium mb-2">Additional Information</h4>
@@ -2220,8 +2048,8 @@ export default function AdminDashboard() {
                                             {key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()}:
                                           </span>
                                           <span className="text-white ml-2">
-                                            {typeof value === 'object' && value !== null
-                                              ? Array.isArray(value)
+                                            {typeof value === 'object' && value !== null 
+                                              ? Array.isArray(value) 
                                                 ? value.join(', ')
                                                 : Object.values(value).join(', ')
                                               : String(value)
@@ -2242,7 +2070,6 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
 
           {/* Payouts Tab */}
           <TabsContent value="payouts" className="space-y-6">
@@ -2276,13 +2103,13 @@ export default function AdminDashboard() {
                                 <Badge
                                   variant={
                                     payout.status === 'approved' || payout.status === 'completed' ? 'default' :
-                                      payout.status === 'rejected' ? 'destructive' : 'secondary'
+                                    payout.status === 'rejected' ? 'destructive' : 'secondary'
                                   }
                                   className={
                                     payout.status === 'approved' || payout.status === 'completed' ? 'bg-green-600' :
-                                      payout.status === 'pending' ? 'bg-yellow-600' :
-                                        payout.status === 'processing' ? 'bg-blue-600' :
-                                          'bg-red-600'
+                                    payout.status === 'pending' ? 'bg-yellow-600' :
+                                    payout.status === 'processing' ? 'bg-blue-600' :
+                                    'bg-red-600'
                                   }
                                 >
                                   {payout.status}
@@ -2330,7 +2157,7 @@ export default function AdminDashboard() {
                             </Button>
                           </div>
                         </div>
-
+                        
                         {/* Expanded Payout Details */}
                         {selectedPayout?.id === payout.id && (
                           <div className="border-t border-gray-700 p-4 bg-gray-850">
@@ -2345,7 +2172,7 @@ export default function AdminDashboard() {
                                   <p><span className="text-gray-400">Payout ID:</span> <span className="text-white font-mono text-xs">{payout.id}</span></p>
                                 </div>
                               </div>
-
+                              
                               <div>
                                 <h4 className="text-white font-medium mb-2">Payment Details</h4>
                                 <div className="space-y-1 text-sm">
@@ -2364,7 +2191,7 @@ export default function AdminDashboard() {
                                   )}
                                 </div>
                               </div>
-
+                              
                               <div>
                                 <h4 className="text-white font-medium mb-2">Actions</h4>
                                 <div className="space-y-2">
@@ -2400,7 +2227,7 @@ export default function AdminDashboard() {
                                   </Button>
                                 </div>
                               </div>
-
+                              
                               {payout.admin_notes && (
                                 <div className="md:col-span-2 lg:col-span-3">
                                   <h4 className="text-white font-medium mb-2">Admin Notes</h4>
@@ -2420,357 +2247,58 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Takedowns Tab */}
           <TabsContent value="takedowns" className="space-y-6">
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <CardTitle className="text-white flex items-center">
-                    <AlertCircle className="w-5 h-5 mr-2 text-red-400" />
-                    User Takedown Requests
-                  </CardTitle>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-yellow-600 text-white">
-                        {takedownRequests.filter((r: any) => r.status === 'pending').length} Pending
-                      </Badge>
-                      <Badge className="bg-blue-600 text-white">
-                        {takedownRequests.filter((r: any) => r.status === 'in_progress').length} In Progress
-                      </Badge>
-                      <Badge className="bg-green-600 text-white">
-                        {takedownRequests.filter((r: any) => r.status === 'completed').length} Completed
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={fetchUserTakedownRequests}
-                      className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                <CardTitle className="text-white flex items-center">
+                  <AlertCircle className="w-5 h-5 mr-2 text-red-400" />
+                  Takedown Requests
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {takedownRequests.length === 0 ? (
-                    <div className="text-center py-12">
-                      <AlertCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-400 text-lg font-medium mb-2">No Takedown Requests</p>
-                      <p className="text-gray-500 text-sm">All takedown requests will appear here</p>
+                    <div className="text-center py-8">
+                      <AlertCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400">No takedown requests found</p>
                     </div>
                   ) : (
-                    takedownRequests.map((request: any) => {
-                      // Safely access nested properties with fallbacks
-                      const userProfile = request.profiles || {}
-                      const release = request.releases || {}
-
-                      return (
-                        <div key={request.id} className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden hover:border-gray-600 transition-colors">
-                          <div className="p-4 sm:p-6">
-                            <div className="flex flex-col lg:flex-row gap-4 lg:items-start lg:justify-between">
-                              {/* Left Section - Release Info */}
-                              <div className="flex gap-4 flex-1 min-w-0">
-                                {/* Cover Art */}
-                                {release.cover_art_url ? (
-                                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gray-700">
-                                    <Image
-                                      src={release.cover_art_url}
-                                      alt={request.release_title || 'Release cover'}
-                                      fill
-                                      className="object-cover"
-                                      unoptimized
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none'
-                                      }}
-                                    />
-                                  </div>
-                                ) : (
-                                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <Music className="w-8 h-8 text-gray-500" />
-                                  </div>
-                                )}
-
-                                {/* Details */}
-                                <div className="flex-1 min-w-0">
-                                  <h3 className="text-white font-semibold text-lg mb-1 truncate">
-                                    {request.release_title || 'Unknown Release'}
-                                  </h3>
-                                  <p className="text-gray-400 text-sm mb-2">
-                                    by {request.artist_name || 'Unknown Artist'}
-                                  </p>
-
-                                  {/* Status Badges */}
-                                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                                    <Badge className={
-                                      request.status === 'pending' ? 'bg-yellow-600 text-white' :
-                                        request.status === 'in_progress' ? 'bg-blue-600 text-white' :
-                                          request.status === 'completed' ? 'bg-green-600 text-white' :
-                                            'bg-red-600 text-white'
-                                    }>
-                                      {request.status.replace('_', ' ').toUpperCase()}
-                                    </Badge>
-
-                                    {request.urgency && (
-                                      <Badge variant="outline" className="border-orange-600 text-orange-400">
-                                        {request.urgency.toUpperCase()} Priority
-                                      </Badge>
-                                    )}
-
-                                    <span className="text-gray-500 text-xs">
-                                      {new Date(request.created_at).toLocaleDateString()}
-                                    </span>
-                                  </div>
-
-                                  {/* User Info */}
-                                  <div className="space-y-1 text-sm">
-                                    <div className="flex items-center gap-2 text-gray-400">
-                                      <User className="w-3.5 h-3.5" />
-                                      <span>
-                                        {userProfile.full_name || userProfile.username || userProfile.email || 'Unknown User'}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 text-gray-400">
-                                      <AlertTriangle className="w-3.5 h-3.5" />
-                                      <span className="capitalize">{request.reason || 'No reason provided'}</span>
-                                    </div>
-                                  </div>
-
-                                  {/* Detailed Reason */}
-                                  {request.detailed_reason && (
-                                    <div className="mt-3 p-3 bg-gray-900 rounded border-l-2 border-blue-600">
-                                      <p className="text-gray-300 text-sm">{request.detailed_reason}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Platforms */}
-                                  {request.platforms && request.platforms.length > 0 && (
-                                    <div className="mt-3">
-                                      <Label className="text-gray-400 text-xs mb-2 block">Affected Platforms</Label>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {request.platforms.map((platform: string) => (
-                                          <Badge key={platform} variant="outline" className="text-xs border-gray-600 text-gray-300">
-                                            {platform}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Admin Notes */}
-                                  {request.admin_notes && (
-                                    <div className="mt-3 p-3 bg-yellow-900/20 rounded border-l-2 border-yellow-600">
-                                      <Label className="text-yellow-400 text-xs mb-1 block">Admin Notes</Label>
-                                      <p className="text-gray-300 text-sm">{request.admin_notes}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Right Section - Actions */}
-                              <div className="flex flex-row lg:flex-col gap-2 flex-shrink-0">
-                                {request.status === 'pending' && (
-                                  <>
-                                    {/* Start Takedown Dialog */}
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
-                                        >
-                                          <Play className="w-4 h-4 mr-1" />
-                                          Start Process
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="bg-gray-900 border-gray-700 max-w-lg">
-                                        <DialogHeader>
-                                          <DialogTitle className="text-white">Start Takedown Process</DialogTitle>
-                                          <DialogDescription className="text-gray-400">
-                                            Begin processing the takedown request for "{request.release_title}"
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4">
-                                          <div>
-                                            <Label className="text-white mb-2 block">Admin Notes (Optional)</Label>
-                                            <Textarea
-                                              value={takedownAdminNotes}
-                                              onChange={(e) => setTakedownAdminNotes(e.target.value)}
-                                              placeholder="Add internal notes about this takedown process..."
-                                              className="bg-gray-800 border-gray-700 text-white resize-none"
-                                              rows={4}
-                                            />
-                                          </div>
-                                          <div className="flex gap-3">
-                                            <Button
-                                              onClick={() => {
-                                                handleTakedownAction(request.id, 'in_progress', 'takedown')
-                                              }}
-                                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                                            >
-                                              <Play className="w-4 h-4 mr-2" />
-                                              Start Takedown
-                                            </Button>
-                                            <DialogClose asChild>
-                                              <Button
-                                                variant="outline"
-                                                className="border-gray-700 text-white hover:bg-gray-800"
-                                              >
-                                                Cancel
-                                              </Button>
-                                            </DialogClose>
-                                          </div>
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-
-                                    {/* Reject Dialog */}
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="border-red-700 text-red-400 hover:bg-red-900/20 whitespace-nowrap"
-                                        >
-                                          <X className="w-4 h-4 mr-1" />
-                                          Reject
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="bg-gray-900 border-gray-700 max-w-lg">
-                                        <DialogHeader>
-                                          <DialogTitle className="text-white">Reject Takedown Request</DialogTitle>
-                                          <DialogDescription className="text-gray-400">
-                                            Provide a reason for rejecting this request
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4">
-                                          <div>
-                                            <Label className="text-white mb-2 block">Rejection Reason *</Label>
-                                            <Textarea
-                                              value={takedownAdminNotes}
-                                              onChange={(e) => setTakedownAdminNotes(e.target.value)}
-                                              placeholder="Explain why this takedown request cannot be processed..."
-                                              className="bg-gray-800 border-gray-700 text-white resize-none"
-                                              rows={4}
-                                              required
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">
-                                              This message will be sent to the user
-                                            </p>
-                                          </div>
-                                          <div className="flex gap-3">
-                                            <Button
-                                              onClick={() => handleTakedownAction(request.id, 'rejected')}
-                                              disabled={!takedownAdminNotes.trim()}
-                                              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                                            >
-                                              <X className="w-4 h-4 mr-2" />
-                                              Confirm Rejection
-                                            </Button>
-                                            <DialogClose asChild>
-                                              <Button
-                                                variant="outline"
-                                                className="border-gray-700 text-white hover:bg-gray-800"
-                                                onClick={() => setTakedownAdminNotes('')}
-                                              >
-                                                Cancel
-                                              </Button>
-                                            </DialogClose>
-                                          </div>
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  </>
-                                )}
-
-                                {/* Mark as Completed (for in_progress status) */}
-                                {request.status === 'in_progress' && (
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button
-                                        size="sm"
-                                        className="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
-                                      >
-                                        <Check className="w-4 h-4 mr-1" />
-                                        Mark Complete
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="bg-gray-900 border-gray-700 max-w-lg">
-                                      <DialogHeader>
-                                        <DialogTitle className="text-white">Complete Takedown</DialogTitle>
-                                        <DialogDescription className="text-gray-400">
-                                          Confirm that the takedown has been successfully processed
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      <div className="space-y-4">
-                                        <div>
-                                          <Label className="text-white mb-2 block">Completion Notes (Optional)</Label>
-                                          <Textarea
-                                            value={takedownAdminNotes}
-                                            onChange={(e) => setTakedownAdminNotes(e.target.value)}
-                                            placeholder="Add any final notes about the completion..."
-                                            className="bg-gray-800 border-gray-700 text-white resize-none"
-                                            rows={3}
-                                          />
-                                        </div>
-                                        <div className="bg-green-900/20 border border-green-800 rounded p-3">
-                                          <p className="text-green-300 text-sm flex items-start gap-2">
-                                            <Check className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                            <span>This will mark the release as taken down and notify the user.</span>
-                                          </p>
-                                        </div>
-                                        <div className="flex gap-3">
-                                          <Button
-                                            onClick={() => handleTakedownAction(request.id, 'completed')}
-                                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                                          >
-                                            <Check className="w-4 h-4 mr-2" />
-                                            Mark as Completed
-                                          </Button>
-                                          <DialogClose asChild>
-                                            <Button
-                                              variant="outline"
-                                              className="border-gray-700 text-white hover:bg-gray-800"
-                                              onClick={() => setTakedownAdminNotes('')}
-                                            >
-                                              Cancel
-                                            </Button>
-                                          </DialogClose>
-                                        </div>
-                                      </div>
-                                    </DialogContent>
-                                  </Dialog>
-                                )}
-
-                                {/* View Release Button (always available) */}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-gray-600 text-gray-300 hover:bg-gray-700 whitespace-nowrap"
-                                  onClick={() => {
-                                    if (release.id) {
-                                      const fullRelease = releases.find(r => r.id === release.id)
-                                      if (fullRelease) {
-                                        setSelectedRelease(fullRelease)
-                                        setActiveTab('releases')
-                                        toast.info('Switched to Releases tab')
-                                      } else {
-                                        toast.error('Release not found')
-                                      }
-                                    } else {
-                                      toast.error('Release information not available')
-                                    }
-                                  }}
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  View Release
-                                </Button>
-                              </div>
+                    takedownRequests.map((takedown) => (
+                      <div key={takedown.id} className="p-4 bg-gray-800 rounded-lg border border-gray-700">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-white font-medium">{takedown.title}</h3>
+                            <p className="text-gray-400 text-sm">Artist: {takedown.artist}</p>
+                            <p className="text-gray-400 text-sm">Complainant: {takedown.complainant}</p>
+                            <p className="text-gray-500 text-xs mt-1">{takedown.reason}</p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <Badge variant="destructive">{takedown.status}</Badge>
+                              <span className="text-gray-500 text-xs">
+                                {new Date(takedown.created_at).toLocaleDateString()}
+                              </span>
                             </div>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              size="sm"
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              <Ban className="w-4 h-4 mr-1" />
+                              Take Down
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Review
+                            </Button>
+                          </div>
                         </div>
-                      )
-                    })
+                      </div>
+                    ))
                   )}
                 </div>
               </CardContent>
@@ -2842,12 +2370,12 @@ export default function AdminDashboard() {
                                   <Badge
                                     variant={
                                       edit.status === 'approved' ? 'default' :
-                                        edit.status === 'rejected' ? 'destructive' : 'secondary'
+                                      edit.status === 'rejected' ? 'destructive' : 'secondary'
                                     }
                                     className={
                                       edit.status === 'approved' ? 'bg-green-600' :
-                                        edit.status === 'pending' ? 'bg-yellow-600' :
-                                          'bg-red-600'
+                                      edit.status === 'pending' ? 'bg-yellow-600' :
+                                      'bg-red-600'
                                     }
                                   >
                                     {edit.status}
@@ -2875,7 +2403,7 @@ export default function AdminDashboard() {
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    onClick={() => setEditRejectionModal({ open: true, editId: edit.id, releaseTitle: edit.releases?.title || 'Unknown Release' })}
+                                    onClick={() => setEditRejectionModal({open: true, editId: edit.id, releaseTitle: edit.releases?.title || 'Unknown Release'})}
                                   >
                                     <XCircle className="w-4 h-4 mr-1" />
                                     Reject
@@ -2893,7 +2421,7 @@ export default function AdminDashboard() {
                               </Button>
                             </div>
                           </div>
-
+                          
                           {/* Expanded Edit Details */}
                           {selectedRelease?.id === edit.id && (
                             <div className="border-t border-gray-700 p-4 bg-gray-850">
@@ -2913,7 +2441,7 @@ export default function AdminDashboard() {
                                     ))}
                                   </div>
                                 </div>
-
+                                
                                 <div>
                                   <h4 className="text-white font-medium mb-3">Proposed Changes</h4>
                                   <div className="bg-gray-900 rounded p-3 space-y-2">
@@ -2929,7 +2457,7 @@ export default function AdminDashboard() {
                                     ))}
                                   </div>
                                 </div>
-
+                                
                                 <div className="lg:col-span-2">
                                   <h4 className="text-white font-medium mb-3">Edit Summary</h4>
                                   <div className="bg-gray-900 rounded p-3">
@@ -2937,7 +2465,7 @@ export default function AdminDashboard() {
                                       {edit.change_summary || 'No summary provided'}
                                     </p>
                                   </div>
-
+                                  
                                   {edit.rejection_reason && (
                                     <div className="mt-3">
                                       <h5 className="text-red-400 font-medium mb-2">Rejection Reason</h5>
@@ -2946,7 +2474,7 @@ export default function AdminDashboard() {
                                       </div>
                                     </div>
                                   )}
-
+                                  
                                   <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                     <div>
                                       <span className="text-gray-400">Created:</span>
@@ -3020,80 +2548,80 @@ export default function AdminDashboard() {
                   {publishingRequests
                     .filter(request => statusFilter === 'all' || request.status === statusFilter)
                     .map((request) => (
-                      <div key={request.id} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <div className="flex items-center space-x-2">
-                                <User className="w-4 h-4 text-gray-400" />
-                                <span className="text-white font-medium">{request.profiles.full_name}</span>
-                              </div>
-                              <Badge
-                                variant={
-                                  request.status === 'approved' ? 'default' :
-                                    request.status === 'rejected' ? 'destructive' : 'secondary'
-                                }
-                                className={
-                                  request.status === 'approved' ? 'bg-green-600 text-white' :
-                                    request.status === 'rejected' ? 'bg-red-600 text-white' :
-                                      'bg-yellow-600 text-white'
-                                }
-                              >
-                                {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                              </Badge>
+                    <div key={request.id} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className="flex items-center space-x-2">
+                              <User className="w-4 h-4 text-gray-400" />
+                              <span className="text-white font-medium">{request.profiles.full_name}</span>
                             </div>
-                            <div className="text-gray-300 text-sm space-y-1">
-                              <div className="flex items-center space-x-2">
-                                <Mail className="w-4 h-4 text-gray-400" />
-                                <span>{request.user_email}</span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <Calendar className="w-4 h-4 text-gray-400" />
-                                <span>Requested {new Date(request.created_at).toLocaleDateString()}</span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <FileText className="w-4 h-4 text-gray-400" />
-                                <span>Type: {request.request_type.replace('_', ' ')}</span>
-                              </div>
-                            </div>
-                            {request.message && (
-                              <div className="mt-3 p-3 bg-gray-900 rounded border-l-4 border-blue-500">
-                                <p className="text-gray-300 text-sm italic">"{request.message}"</p>
-                              </div>
-                            )}
-                            {request.admin_notes && (
-                              <div className="mt-3 p-3 bg-gray-900 rounded border-l-4 border-yellow-500">
-                                <p className="text-gray-400 text-xs font-medium mb-1">Admin Notes:</p>
-                                <p className="text-gray-300 text-sm">{request.admin_notes}</p>
-                              </div>
-                            )}
+                            <Badge 
+                              variant={
+                                request.status === 'approved' ? 'default' : 
+                                request.status === 'rejected' ? 'destructive' : 'secondary'
+                              }
+                              className={
+                                request.status === 'approved' ? 'bg-green-600 text-white' :
+                                request.status === 'rejected' ? 'bg-red-600 text-white' :
+                                'bg-yellow-600 text-white'
+                              }
+                            >
+                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            </Badge>
                           </div>
-                          {request.status === 'pending' && (
-                            <div className="flex space-x-2 ml-4">
-                              <Button
-                                size="sm"
-                                onClick={() => handlePublishingAction(request.id, 'approve')}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => {
-                                  const notes = prompt('Reason for rejection (optional):')
-                                  handlePublishingAction(request.id, 'reject', notes || undefined)
-                                }}
-                              >
-                                <XCircle className="w-4 h-4 mr-1" />
-                                Reject
-                              </Button>
+                          <div className="text-gray-300 text-sm space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <Mail className="w-4 h-4 text-gray-400" />
+                              <span>{request.user_email}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <span>Requested {new Date(request.created_at).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <FileText className="w-4 h-4 text-gray-400" />
+                              <span>Type: {request.request_type.replace('_', ' ')}</span>
+                            </div>
+                          </div>
+                          {request.message && (
+                            <div className="mt-3 p-3 bg-gray-900 rounded border-l-4 border-blue-500">
+                              <p className="text-gray-300 text-sm italic">"{request.message}"</p>
+                            </div>
+                          )}
+                          {request.admin_notes && (
+                            <div className="mt-3 p-3 bg-gray-900 rounded border-l-4 border-yellow-500">
+                              <p className="text-gray-400 text-xs font-medium mb-1">Admin Notes:</p>
+                              <p className="text-gray-300 text-sm">{request.admin_notes}</p>
                             </div>
                           )}
                         </div>
+                        {request.status === 'pending' && (
+                          <div className="flex space-x-2 ml-4">
+                            <Button
+                              size="sm"
+                              onClick={() => handlePublishingAction(request.id, 'approve')}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => {
+                                const notes = prompt('Reason for rejection (optional):')
+                                handlePublishingAction(request.id, 'reject', notes || undefined)
+                              }}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    </div>
+                  ))}
                   {publishingRequests.filter(request => statusFilter === 'all' || request.status === statusFilter).length === 0 && (
                     <div className="text-center py-8 text-gray-400">
                       <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -3167,21 +2695,21 @@ export default function AdminDashboard() {
                                   <Badge
                                     variant={
                                       ticket.status === 'resolved' ? 'default' :
-                                        ticket.status === 'closed' ? 'secondary' : 'outline'
+                                      ticket.status === 'closed' ? 'secondary' : 'outline'
                                     }
                                     className={
                                       ticket.status === 'resolved' ? 'bg-green-600' :
-                                        ticket.status === 'open' ? 'bg-red-600' :
-                                          ticket.status === 'in_progress' ? 'bg-yellow-600' :
-                                            'bg-gray-600'
+                                      ticket.status === 'open' ? 'bg-red-600' :
+                                      ticket.status === 'in_progress' ? 'bg-yellow-600' :
+                                      'bg-gray-600'
                                     }
                                   >
                                     {ticket.status.replace('_', ' ')}
                                   </Badge>
                                   <Badge variant="outline" className={
                                     ticket.priority === 'high' ? 'text-red-400 border-red-400' :
-                                      ticket.priority === 'medium' ? 'text-yellow-400 border-yellow-400' :
-                                        'text-green-400 border-green-400'
+                                    ticket.priority === 'medium' ? 'text-yellow-400 border-yellow-400' :
+                                    'text-green-400 border-green-400'
                                   }>
                                     {ticket.priority} priority
                                   </Badge>
@@ -3223,7 +2751,7 @@ export default function AdminDashboard() {
                               </Button>
                             </div>
                           </div>
-
+                          
                           {/* Expanded Ticket Details */}
                           {selectedRelease?.id === ticket.id && (
                             <div className="border-t border-gray-700 p-4 bg-gray-850">
@@ -3238,7 +2766,7 @@ export default function AdminDashboard() {
                                     <p><span className="text-gray-400">User:</span> <span className="text-white">{ticket.profiles?.full_name || ticket.profiles?.email || 'Unknown'}</span></p>
                                   </div>
                                 </div>
-
+                                
                                 <div>
                                   <h4 className="text-white font-medium mb-3">Timeline</h4>
                                   <div className="space-y-2 text-sm">
@@ -3252,13 +2780,13 @@ export default function AdminDashboard() {
                                     )}
                                   </div>
                                 </div>
-
+                                
                                 <div className="lg:col-span-2">
                                   <h4 className="text-white font-medium mb-3">Description</h4>
                                   <div className="bg-gray-900 rounded p-3">
                                     <p className="text-gray-300 text-sm whitespace-pre-wrap">{ticket.description}</p>
                                   </div>
-
+                                  
                                   {ticket.internal_notes && (
                                     <div className="mt-3">
                                       <h5 className="text-yellow-400 font-medium mb-2">Internal Notes</h5>
@@ -3267,7 +2795,7 @@ export default function AdminDashboard() {
                                       </div>
                                     </div>
                                   )}
-
+                                  
                                   {ticket.resolution_notes && (
                                     <div className="mt-3">
                                       <h5 className="text-green-400 font-medium mb-2">Resolution Notes</h5>
@@ -3317,9 +2845,9 @@ export default function AdminDashboard() {
                             <span className="text-white font-medium">{campaign.releases?.title || 'Unknown Release'}</span>
                             <Badge className={
                               campaign.status === 'completed' ? 'bg-green-600' :
-                                campaign.status === 'in_progress' ? 'bg-blue-600' :
-                                  campaign.status === 'cancelled' ? 'bg-gray-600' :
-                                    'bg-yellow-600'
+                              campaign.status === 'in_progress' ? 'bg-blue-600' :
+                              campaign.status === 'cancelled' ? 'bg-gray-600' :
+                              'bg-yellow-600'
                             }>
                               {campaign.status}
                             </Badge>
@@ -3363,8 +2891,8 @@ export default function AdminDashboard() {
                               await fetch('/api/admin/playlist-campaigns', {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  id: campaign.id,
+                                body: JSON.stringify({ 
+                                  id: campaign.id, 
                                   action: 'complete',
                                   data: {
                                     playlist_placements: placements ? parseInt(placements) : 0,
@@ -3396,7 +2924,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Beat Marketplace Tab */}
-          <TabsContent value="beats" className="space-y-6">
+          {/* <TabsContent value="beats" className="space-y-6">
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -3424,8 +2952,8 @@ export default function AdminDashboard() {
                             <span className="text-white font-medium">{beat.title}</span>
                             <Badge className={
                               beat.approval_status === 'approved' ? 'bg-green-600' :
-                                beat.approval_status === 'rejected' ? 'bg-red-600' :
-                                  'bg-yellow-600'
+                              beat.approval_status === 'rejected' ? 'bg-red-600' :
+                              'bg-yellow-600'
                             }>
                               {beat.approval_status}
                             </Badge>
@@ -3490,7 +3018,14 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
+            <TabsContent value="upload" className="mt-6">
+           <AdminBeatUpload onUploadComplete={handleUploadComplete} />
+        </TabsContent>
+
+        <TabsContent value="manage" className="mt-6">
+          <AdminBeatManagement />
+        </TabsContent>
 
           {/* Mastering Jobs Tab */}
           <TabsContent value="mastering" className="space-y-6">
@@ -3521,9 +3056,9 @@ export default function AdminDashboard() {
                             <span className="text-white font-medium">{job.title}</span>
                             <Badge className={
                               job.status === 'completed' ? 'bg-green-600' :
-                                job.status === 'processing' ? 'bg-blue-600' :
-                                  job.status === 'failed' ? 'bg-red-600' :
-                                    'bg-yellow-600'
+                              job.status === 'processing' ? 'bg-blue-600' :
+                              job.status === 'failed' ? 'bg-red-600' :
+                              'bg-yellow-600'
                             }>
                               {job.status}
                             </Badge>
@@ -3554,8 +3089,8 @@ export default function AdminDashboard() {
                                 await fetch('/api/admin/mastering-jobs', {
                                   method: 'PATCH',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    id: job.id,
+                                  body: JSON.stringify({ 
+                                    id: job.id, 
                                     action: 'refund',
                                     data: { refund_reason: reason, refund_amount: parseFloat(amount || '0') }
                                   })
@@ -3616,8 +3151,8 @@ export default function AdminDashboard() {
                             </Badge>
                             <Badge className={
                               flag.status === 'actioned' ? 'bg-green-600' :
-                                flag.status === 'dismissed' ? 'bg-gray-600' :
-                                  'bg-yellow-600'
+                              flag.status === 'dismissed' ? 'bg-gray-600' :
+                              'bg-yellow-600'
                             }>
                               {flag.status}
                             </Badge>
@@ -3764,9 +3299,9 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-gray-300 text-sm font-medium mb-2 block">Select User</label>
-                    <Select
-                      value={notificationForm.user_id}
-                      onValueChange={(value) => setNotificationForm({ ...notificationForm, user_id: value })}
+                    <Select 
+                      value={notificationForm.user_id} 
+                      onValueChange={(value) => setNotificationForm({...notificationForm, user_id: value})}
                     >
                       <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                         <SelectValue placeholder="Choose a user..." />
@@ -3789,7 +3324,7 @@ export default function AdminDashboard() {
                     <Input
                       placeholder="Notification title"
                       value={notificationForm.title}
-                      onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })}
+                      onChange={(e) => setNotificationForm({...notificationForm, title: e.target.value})}
                       className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
@@ -3798,16 +3333,16 @@ export default function AdminDashboard() {
                     <Textarea
                       placeholder="Notification message"
                       value={notificationForm.message}
-                      onChange={(e) => setNotificationForm({ ...notificationForm, message: e.target.value })}
+                      onChange={(e) => setNotificationForm({...notificationForm, message: e.target.value})}
                       className="bg-gray-800 border-gray-700 text-white"
                       rows={4}
                     />
                   </div>
                   <div>
                     <label className="text-gray-300 text-sm font-medium mb-2 block">Type</label>
-                    <Select
-                      value={notificationForm.type}
-                      onValueChange={(value: any) => setNotificationForm({ ...notificationForm, type: value })}
+                    <Select 
+                      value={notificationForm.type} 
+                      onValueChange={(value: any) => setNotificationForm({...notificationForm, type: value})}
                     >
                       <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                         <SelectValue />
@@ -3842,13 +3377,11 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-
-
         </Tabs>
       </div>
 
       {/* Rejection Reason Modal */}
-      <Dialog open={rejectionModal.open} onOpenChange={(open) => setRejectionModal({ ...rejectionModal, open })}>
+      <Dialog open={rejectionModal.open} onOpenChange={(open) => setRejectionModal({...rejectionModal, open})}>
         <DialogContent className="bg-gray-900 border-gray-800 text-white">
           <DialogHeader>
             <DialogTitle className="text-white">
@@ -3882,7 +3415,7 @@ export default function AdminDashboard() {
             <Button
               variant="outline"
               onClick={() => {
-                setRejectionModal({ open: false, releaseId: '', releaseTitle: '' })
+                setRejectionModal({open: false, releaseId: '', releaseTitle: ''})
                 setRejectionReason('')
               }}
               className="border-gray-600 text-gray-300 hover:bg-gray-800"
@@ -3902,7 +3435,7 @@ export default function AdminDashboard() {
       </Dialog>
 
       {/* Edit Rejection Reason Modal */}
-      <Dialog open={editRejectionModal.open} onOpenChange={(open) => setEditRejectionModal({ ...editRejectionModal, open })}>
+      <Dialog open={editRejectionModal.open} onOpenChange={(open) => setEditRejectionModal({...editRejectionModal, open})}>
         <DialogContent className="bg-gray-900 border-gray-800 text-white">
           <DialogHeader>
             <DialogTitle className="text-white">
@@ -3936,7 +3469,7 @@ export default function AdminDashboard() {
             <Button
               variant="outline"
               onClick={() => {
-                setEditRejectionModal({ open: false, editId: '', releaseTitle: '' })
+                setEditRejectionModal({open: false, editId: '', releaseTitle: ''})
                 setEditRejectionReason('')
               }}
               className="border-gray-600 text-gray-300 hover:bg-gray-800"

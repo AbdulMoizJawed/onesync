@@ -1,31 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase configuration')
+  }
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const supabase = getSupabaseAdmin()
 
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json(
-        { error: 'Missing Supabase configuration' },
-        { status: 500 }
-      )
-    }
-
-    // Use service role client for admin operations
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // Get all releases (without profile join since relationship doesn't exist)
     const { data: releases, error } = await supabase
       .from('releases')
       .select('*')
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Database error:', error)
+      console.error('❌ GET error:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch release queue' },
+        { error: 'Failed to fetch releases' },
         { status: 500 }
       )
     }
@@ -35,9 +39,9 @@ export async function GET(request: NextRequest) {
       count: releases?.length || 0
     })
   } catch (error) {
-    console.error('Admin release queue error:', error)
+    console.error('❌ GET error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch release queue' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
@@ -45,65 +49,101 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { id, action, reason } = await request.json()
+    const body = await request.json()
+    const { id, action, reason } = body
     
+    console.log('📥 PATCH:', { id, action, reason })
+
+    console.log(action, "action in backend ")
+    console.log(reason, "action in reason ")
+
+    
+    // Validate
     if (!id || !action) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Missing id or action' },
         { status: 400 }
       )
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseKey) {
+    if (!['approve', 'reject'].includes(action)) {
       return NextResponse.json(
-        { error: 'Missing Supabase configuration' },
-        { status: 500 }
+        { error: 'Invalid action' },
+        { status: 400 }
       )
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = getSupabaseAdmin()
 
-    let status
-    switch (action) {
-      case 'approve':
-        status = 'approved'
-        break
-      case 'reject':
-        status = 'rejected'
-        break
-      default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        )
+    // Check exists
+    console.log('🔍 Checking release:', id)
+    const { data: existing, error: fetchError } = await supabase
+      .from('releases')
+      .select('id, title, status')
+      .eq('id', id)
+      .limit(1)
+
+    if (fetchError || !existing || existing.length === 0) {
+      console.error('❌ Not found')
+      return NextResponse.json(
+        { error: 'Release not found' },
+        { status: 404 }
+      )
     }
 
-    const updateData: any = { status }
-    if (reason) {
+    console.log('✅ Found:', existing[0].title)
+
+    // Build update
+    const newStatus = action === 'approve' ? 'approved' : 'rejected'
+    const updateData: any = {
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    }
+
+    if (action === 'approve') {
+      updateData.approved_at = new Date().toISOString()
+    } else if (reason) {
       updateData.admin_notes = reason
+      updateData.rejection_reason = reason
     }
 
-    const { error } = await supabase
+    console.log('📝 Updating:', updateData)
+
+    // Update
+    const { data: updated, error: updateError } = await supabase
       .from('releases')
       .update(updateData)
       .eq('id', id)
+      .select()
 
-    if (error) {
-      console.error('Database error:', error)
+    if (updateError) {
+      console.error('❌ Update error:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update release' },
+        { error: 'Update failed', details: updateError.message },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Admin release update error:', error)
+    if (!updated || updated.length === 0) {
+      console.error('❌ No data returned')
+      return NextResponse.json(
+        { error: 'Update returned no data' },
+        { status: 500 }
+      )
+    }
+
+    console.log('✅ Updated to:', updated[0].status)
+
+    return NextResponse.json({
+      success: true,
+      message: `Release ${action}d successfully`,
+      data: updated[0]
+    })
+
+  } catch (error: any) {
+    console.error('❌ PATCH error:', error)
     return NextResponse.json(
-      { error: 'Failed to update release' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
