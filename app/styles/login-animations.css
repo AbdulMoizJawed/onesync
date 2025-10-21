@@ -1,0 +1,105 @@
+/* Critical Login Page Animations - Must be preserved in production */
+
+/* Core animations that must never be purged */
+@keyframes animate-pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+@keyframes animate-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes animate-gentle-sway {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(0.5deg); }
+  50% { transform: translateY(-5px) rotate(0deg); }
+  75% { transform: translateY(-10px) rotate(-0.5deg); }
+}
+
+@keyframes animate-card-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-15px) scale(1.01); }
+}
+
+@keyframes animate-text-glow {
+  0%, 100% { text-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+  50% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.6), 0 0 30px rgba(255, 255, 255, 0.3); }
+}
+
+@keyframes animate-carousel-down {
+  0% { transform: translateY(-120vh); }
+  100% { transform: translateY(120vh); }
+}
+
+/* Animation utility classes - marked as important to override any conflicts */
+.animate-pulse-slow {
+  animation: animate-pulse-slow 8s ease-in-out infinite !important;
+}
+
+.animate-gradient-shift {
+  animation: animate-gradient-shift 15s ease-in-out infinite !important;
+  background-size: 400% 400% !important;
+}
+
+.animate-gentle-sway {
+  animation: animate-gentle-sway 12s ease-in-out infinite !important;
+}
+
+.animate-card-float {
+  animation: animate-card-float 8s ease-in-out infinite !important;
+}
+
+.animate-text-glow {
+  animation: animate-text-glow 4s ease-in-out infinite !important;
+}
+
+.animate-carousel-down {
+  animation: animate-carousel-down 25s linear infinite !important;
+}
+
+.animate-carousel-down-delayed {
+  animation: animate-carousel-down 25s linear infinite !important;
+  animation-delay: -12.5s !important;
+}
+
+/* Critical layout classes for login page */
+.login-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, rgb(17 24 39), rgb(0 0 0), rgb(17 24 39));
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.login-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.login-input:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.login-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  backdrop-filter: blur(8px);
+}
+
+.login-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

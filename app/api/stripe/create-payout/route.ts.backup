@@ -1,0 +1,106 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import { getStripe } from '@/lib/stripe'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+function withCors(json: any, init?: ResponseInit) {
+  const res = NextResponse.json(json, init)
+  res.headers.set('Access-Control-Allow-Origin', '*')
+  res.headers.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+  res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.headers.set('Access-Control-Allow-Credentials', 'true')
+  return res
+}
+
+export async function OPTIONS() {
+  return withCors({ ok: true })
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    
+    const supabase = createRouteHandlerClient({ 
+      cookies: async () => await cookies()
+    })
+    const stripe = getStripe()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return withCors({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { accountId, amount, currency = 'usd' } = await request.json()
+    
+    if (!accountId || !amount) {
+      return withCors({ error: 'Account ID and amount are required' }, { status: 400 })
+    }
+
+    if (amount < 100) {
+      return withCors({ error: 'Minimum payout amount is $1.00' }, { status: 400 })
+    }
+
+    // Verify user owns this account
+    const { data: accountRec, error } = await supabase
+      .from('stripe_accounts')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('stripe_account_id', accountId)
+      .single()
+
+    if (error || !accountRec) {
+      return withCors({ error: 'Account not found or unauthorized' }, { status: 404 })
+    }
+
+    // Check if account can receive payouts
+    if (!accountRec.payouts_enabled) {
+      return withCors({ error: 'Account is not enabled for payouts. Please complete onboarding.' }, { status: 400 })
+    }
+
+    // Create manual payout
+    const payout = await stripe.payouts.create({
+      amount: amount,
+      currency: currency,
+      method: 'instant', // You can also use 'standard' for slower but free payouts
+    }, {
+      stripeAccount: accountId,
+    })
+
+    // Log the payout in your database
+    await supabase.from('stripe_payouts').insert({
+      user_id: user.id,
+      stripe_account_id: accountId,
+      payout_id: payout.id,
+      amount: payout.amount,
+      currency: payout.currency,
+      status: payout.status,
+      arrival_date: new Date(payout.arrival_date * 1000).toISOString(),
+      created_at: new Date().toISOString()
+    })
+
+    return withCors({ 
+      success: true, 
+      payout: {
+        id: payout.id,
+        amount: payout.amount,
+        currency: payout.currency,
+        status: payout.status,
+        arrival_date: payout.arrival_date
+      }
+    })
+  } catch (error: any) {
+    console.error('Error creating payout:', error)
+    
+    // Handle specific Stripe errors
+    if (error.type === 'StripeCardError') {
+      return withCors({ error: 'Payment failed: ' + error.message }, { status: 400 })
+    } else if (error.type === 'StripeInvalidRequestError') {
+      return withCors({ error: 'Invalid request: ' + error.message }, { status: 400 })
+    }
+    
+    const message = error?.message || 'Failed to create payout'
+    return withCors({ error: message }, { status: 500 })
+  }
+}

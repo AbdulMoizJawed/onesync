@@ -1,0 +1,650 @@
+@import "tailwindcss";
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap");
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0a0a0f;
+}
+
+/* Header typography using Montserrat */
+h1, h2, h3, h4, h5, h6,
+.font-heading,
+.font-montserrat,
+.text-heading {
+  font-family: var(--font-montserrat), "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 600;
+}
+
+/* Ensure body text uses Inter */
+p, span, div, label, input, textarea, button,
+.font-body,
+.font-inter,
+.text-body {
+  font-family: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Title and navigation specifically */
+nav, 
+.sidebar a,
+.nav-item,
+.menu-item,
+.title,
+.header-title,
+.page-title {
+  font-family: var(--font-montserrat), "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Smooth animations (optimized for smoothness) */
+* {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition-duration: 200ms;
+}
+
+/* Remove all blue outlines globally */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Consistent theme classes - Refined color scheme */
+.card-dark {
+  background-color: rgb(15 23 42 / 0.5);
+  border: 1px solid rgb(30 41 59 / 0.3);
+  backdrop-filter: blur(12px);
+}
+
+.glass {
+  background-color: rgb(2 6 23 / 0.4);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgb(30 41 59 / 0.2);
+}
+
+.dropdown-content {
+  background-color: rgb(2 6 23 / 0.95);
+  border-color: rgb(30 41 59 / 0.4);
+  backdrop-filter: blur(24px);
+  color: white;
+}
+
+.input-dark {
+  background-color: rgb(15 23 42 / 0.5);
+  border-color: rgb(30 41 59 / 0.3);
+  color: white;
+  backdrop-filter: blur(4px);
+}
+
+.input-dark::placeholder {
+  color: rgb(100 116 139);
+}
+
+.input-dark:focus {
+  border-color: rgb(100 116 139 / 0.6);
+  box-shadow: 0 0 0 3px rgb(100 116 139 / 0.2);
+}
+
+.button-primary {
+  background: linear-gradient(to bottom, rgb(255 255 255), rgb(240 240 240));
+  color: rgb(10 10 15);
+  font-weight: 500;
+  transition: all 200ms;
+  transform: scale(1);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+}
+
+.button-primary:hover {
+  background: linear-gradient(to bottom, rgb(240 240 240), rgb(220 220 220));
+  transform: scale(1.05);
+}
+
+.button-primary:active {
+  transform: scale(0.95);
+}
+
+.button-secondary {
+  background-color: rgb(15 23 42 / 0.5);
+  color: white;
+  border: 1px solid rgb(30 41 59 / 0.3);
+  backdrop-filter: blur(4px);
+}
+
+.button-secondary:hover {
+  background-color: rgb(30 41 59 / 0.5);
+  border-color: rgb(51 65 85 / 0.4);
+}
+
+/* Status colors - More sophisticated and muted */
+.status-success {
+  background-color: rgb(16 185 129 / 0.15);
+  color: rgb(52 211 153);
+  border-color: rgb(16 185 129 / 0.25);
+}
+
+.status-warning {
+  background-color: rgb(245 158 11 / 0.15);
+  color: rgb(251 191 36);
+  border-color: rgb(245 158 11 / 0.25);
+}
+
+.status-error {
+  background-color: rgb(239 68 68 / 0.15);
+  color: rgb(248 113 113);
+  border-color: rgb(239 68 68 / 0.25);
+}
+
+.status-info {
+  background-color: rgb(59 130 246 / 0.15);
+  color: rgb(96 165 250);
+  border-color: rgb(59 130 246 / 0.25);
+}
+
+.status-purple {
+  background-color: rgb(168 85 247 / 0.15);
+  color: rgb(196 181 253);
+  border-color: rgb(168 85 247 / 0.25);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, white, rgb(209 213 219));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hover-lift {
+  transition: transform 200ms;
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+}
+
+.content-enter {
+  animation: contentEnter 0.6s ease-out forwards;
+}
+
+@keyframes contentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gentle Animations for Subtle App Feel */
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes subtlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes shakeGentle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes swipeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes swipeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dissolveIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Gentle Animation Classes */
+.animate-gentle-float { animation: gentleFloat 4s ease-in-out infinite; }
+.animate-subtle-pulse { animation: subtlePulse 2s ease-in-out infinite; }
+.animate-pulse-subtle { animation: pulseSubtle 3s ease-in-out infinite; }
+.animate-shake-gentle { animation: shakeGentle 0.4s ease-in-out; }
+.animate-fade-in-up { animation: fadeInUp 0.3s ease-out; }
+.animate-fade-in-down { animation: fadeInDown 0.3s ease-out; }
+.animate-fade-in-left { animation: fadeInLeft 0.3s ease-out; }
+.animate-fade-in-right { animation: fadeInRight 0.3s ease-out; }
+.animate-swipe-in-left { animation: swipeInLeft 0.25s ease-out; }
+.animate-swipe-in-right { animation: swipeInRight 0.25s ease-out; }
+.animate-dissolve-in { animation: dissolveIn 0.4s ease-out; }
+
+/* Gentle Interactive Animation Classes */
+.hover-fade {
+  transition: opacity 200ms;
+}
+
+.hover-fade:hover {
+  opacity: 0.8;
+}
+
+.hover-slide {
+  transition: transform 200ms;
+}
+
+.hover-slide:hover {
+  transform: translateX(2px);
+}
+
+.hover-lift-gentle {
+  transition: transform 300ms;
+}
+
+.hover-lift-gentle:hover {
+  transform: translateY(-1px);
+}
+
+.press-gentle {
+  transition: all 150ms;
+}
+
+.press-gentle:active {
+  transform: scale(0.95);
+  opacity: 0.95;
+}
+
+.press-fade {
+  transition: opacity 100ms;
+}
+
+.press-fade:active {
+  opacity: 0.8;
+}
+
+.dissolve-gentle {
+  transition: all 300ms;
+}
+
+.dissolve-gentle:hover {
+  opacity: 0.9;
+}
+
+/* Gentle stagger animation delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+
+/* Page transition classes */
+.page-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 300ms ease-out;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 300ms ease-in;
+}
+
+/* Mobile-optimized styles */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Better touch targets for mobile */
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improved text readability on mobile */
+  .text-xs {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+  
+  /* Better spacing for cards on mobile */
+  .card-mobile {
+    padding: 0.75rem;
+  }
+  
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Fix button overlapping on mobile */
+  .flex-col-reverse {
+    flex-direction: column !important;
+  }
+  
+  .flex-col-reverse > * {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .flex-col-reverse > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Fix dialog buttons on mobile */
+  .dialog-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .dialog-footer button {
+    width: 100%;
+  }
+  
+  /* Fix navigation buttons spacing */
+  .nav-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  .nav-buttons button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Fix tab navigation on mobile */
+  .tabs-list {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.25rem;
+  }
+  
+  .tabs-trigger {
+    padding: 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Fix card layout on mobile */
+  .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .sm\\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Better focus states for touch devices - remove blue outlines */
+  button:focus,
+  input:focus,
+  textarea:focus,
+  select:focus,
+  [tabindex]:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Fix sidebar overlapping on mobile */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 40;
+  }
+  
+  /* Fix header buttons on mobile */
+  .header-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  
+  /* Fix form buttons on mobile */
+  .form-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
+}
+
+/* Mobile navbar spacing fix */
+.mobile-safe-area {
+  padding-bottom: 6rem; /* 96px - height of mobile navbar + safe area */
+}
+
+@media (min-width: 768px) {
+  .mobile-safe-area {
+    padding-bottom: 1.5rem; /* 24px - normal padding on desktop */
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .h-screen {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Prevent zoom on input focus for iOS */
+@media screen and (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Removed duplicate login animation keyframes & classes.
+   Single source of truth now: tailwind.config.js (keyframes & animation map)
+   If you need custom tweaks (like background-size or delay) add them below inside @layer utilities. */
+
+@layer utilities {
+  /* Utility refinements for existing Tailwind animations */
+  .animate-gradient-shift { background-size: 400% 400%; }
+  .animate-carousel-down-delayed { animation-delay: -12.5s; }
+}

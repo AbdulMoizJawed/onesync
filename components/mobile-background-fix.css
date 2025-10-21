@@ -1,0 +1,91 @@
+/* Mobile Background & Image Switcher Fixes */
+
+/* Fix for excessive background images on mobile */
+@media (max-width: 767px) {
+  /* Make background images more subtle on mobile */
+  .bg-image-mobile-fix,
+  [class*="bg-gradient"],
+  [style*="background-image"] {
+    opacity: 0.15 !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important; /* Prevent parallax scrolling on mobile */
+  }
+  
+  /* Hide decorative background elements completely on small screens */
+  .decorative-bg-element {
+    display: none !important;
+  }
+  
+  /* Fix for world map component mobile appearance */
+  .h-80.bg-gray-800\/30.rounded-lg.p-6.relative.overflow-hidden {
+    height: auto !important;
+    min-height: 220px !important;
+    padding: 1rem !important;
+  }
+  
+  /* Simplify grid layouts on mobile */
+  .grid-cols-2.md\:grid-cols-3.gap-4.h-full {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Hide the bottom image switcher bar on mobile */
+  .image-switcher-bar,
+  .carousel-dots,
+  .slider-controls,
+  [role="tablist"].flex.bg-gray-800\/50.rounded-lg.p-1,
+  .tabs-list {
+    display: none !important;
+  }
+  
+  /* Make cards more compact on mobile */
+  .card, 
+  [class*="card-"] {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  /* Improve mobile text legibility with darker backgrounds */
+  .bg-gray-900\/50,
+  .bg-gray-900\/40,
+  .backdrop-blur-sm {
+    background-color: rgba(17, 24, 39, 0.85) !important; /* More opaque background */
+  }
+  
+  /* Fix floating elements that might cover content */
+  .fixed.bottom-4.right-4,
+  .fixed.bottom-6.right-6 {
+    bottom: 1rem !important;
+    right: 1rem !important;
+    z-index: 40 !important;
+    transform: scale(0.9) !important;
+  }
+}
+
+/* More aggressive fixes for very small screens */
+@media (max-width: 375px) {
+  /* Further reduce visual noise */
+  [class*="animate-"],
+  [class*="hover-"],
+  .transition-all {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* Make text more readable */
+  .text-xs, 
+  .text-sm {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Simplify UI by hiding purely decorative elements */
+  .decorative-element,
+  .w-2.h-2.bg-blue-400.rounded-full,
+  .w-2.h-2.bg-green-400.rounded-full,
+  .w-2.h-2.bg-gray-600.rounded-full.animate-pulse,
+  .w-3.h-3.bg-blue-400.rounded-full.animate-subtle-pulse {
+    display: none !important;
+  }
+}

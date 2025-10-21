@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug Tool</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .log {
+            padding: 5px;
+            margin: 2px 0;
+            border-left: 3px solid #00ff00;
+            padding-left: 10px;
+        }
+        .error {
+            border-left-color: #ff0000;
+            color: #ff0000;
+        }
+        .warning {
+            border-left-color: #ffaa00;
+            color: #ffaa00;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #00ff00;
+            border: none;
+            cursor: pointer;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Auth Debug Tool</h1>
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(msg, type = 'log') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            output.appendChild(div);
+        }
+        
+        log('Starting auth diagnostics...');
+        
+        // Check localStorage
+        log('--- CHECKING LOCALSTORAGE ---');
+        const keys = Object.keys(localStorage);
+        log(`Total localStorage keys: ${keys.length}`);
+        
+        const authKeys = keys.filter(k => 
+            k.includes('supabase') || 
+            k.includes('auth') || 
+            k.includes('sb-') ||
+            k.includes('token')
+        );
+        
+        if (authKeys.length === 0) {
+            log('❌ NO AUTH KEYS FOUND IN LOCALSTORAGE!', 'error');
+            log('This means the session is not being saved', 'error');
+        } else {
+            log(`✅ Found ${authKeys.length} auth-related keys:`);
+            authKeys.forEach(key => {
+                const value = localStorage.getItem(key);
+                log(`  📦 ${key}: ${value ? value.substring(0, 50) + '...' : 'empty'}`);
+                
+                // Try to parse as JSON
+                try {
+                    const parsed = JSON.parse(value);
+                    if (parsed.access_token) {
+                        log(`    ✅ Has access_token`, 'log');
+                    }
+                    if (parsed.refresh_token) {
+                        log(`    ✅ Has refresh_token`, 'log');
+                    }
+                    if (parsed.expires_at) {
+                        const expiresAt = new Date(parsed.expires_at * 1000);
+                        const now = new Date();
+                        const isExpired = expiresAt < now;
+                        log(`    ⏰ Expires: ${expiresAt.toLocaleString()} ${isExpired ? '(EXPIRED!)' : '(valid)'}`, isExpired ? 'error' : 'log');
+                    }
+                } catch (e) {
+                    // Not JSON, that's ok
+                }
+            });
+        }
+        
+        // Check sessionStorage
+        log('--- CHECKING SESSIONSTORAGE ---');
+        const sessionKeys = Object.keys(sessionStorage);
+        log(`Total sessionStorage keys: ${sessionKeys.length}`);
+        
+        const sessionAuthKeys = sessionKeys.filter(k => 
+            k.includes('supabase') || 
+            k.includes('auth') || 
+            k.includes('sb-')
+        );
+        
+        if (sessionAuthKeys.length > 0) {
+            log(`⚠️  Found ${sessionAuthKeys.length} auth keys in sessionStorage (should be in localStorage!)`, 'warning');
+            sessionAuthKeys.forEach(key => {
+                log(`  📦 ${key}`);
+            });
+        }
+        
+        // Check cookies
+        log('--- CHECKING COOKIES ---');
+        const cookies = document.cookie.split(';').map(c => c.trim());
+        log(`Total cookies: ${cookies.length}`);
+        
+        const authCookies = cookies.filter(c => 
+            c.includes('supabase') || 
+            c.includes('auth') || 
+            c.includes('sb-') ||
+            c.includes('token')
+        );
+        
+        if (authCookies.length > 0) {
+            log(`✅ Found ${authCookies.length} auth-related cookies:`);
+            authCookies.forEach(cookie => {
+                const [name] = cookie.split('=');
+                log(`  🍪 ${name}`);
+            });
+        } else {
+            log('No auth cookies found');
+        }
+        
+        // Check if third-party cookies are blocked
+        log('--- CHECKING BROWSER SETTINGS ---');
+        
+        // Test localStorage write
+        try {
+            localStorage.setItem('test_write', 'test');
+            localStorage.removeItem('test_write');
+            log('✅ localStorage is writable');
+        } catch (e) {
+            log('❌ localStorage is NOT writable! This will cause logout issues!', 'error');
+            log(`   Error: ${e.message}`, 'error');
+        }
+        
+        // Check if we're in private/incognito mode
+        if (navigator.storage && navigator.storage.estimate) {
+            navigator.storage.estimate().then(estimate => {
+                if (estimate.quota < 120000000) {
+                    log('⚠️  Might be in Private/Incognito mode (low storage quota)', 'warning');
+                } else {
+                    log('✅ Normal browsing mode detected');
+                }
+            });
+        }
+        
+        log('--- RECOMMENDATIONS ---');
+        if (authKeys.length === 0) {
+            log('🔧 FIX: Session is not being saved to localStorage', 'error');
+            log('   Possible causes:', 'error');
+            log('   1. persistSession is set to false', 'error');
+            log('   2. storage is not configured properly', 'error');
+            log('   3. localStorage is disabled in browser', 'error');
+        }
+        
+        // Add real-time monitoring
+        log('--- MONITORING LOCALSTORAGE CHANGES ---');
+        log('(Will log any changes to localStorage)');
+        
+        const originalSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+            if (key.includes('supabase') || key.includes('auth') || key.includes('sb-')) {
+                log(`🔄 localStorage.setItem: ${key}`, 'log');
+            }
+            return originalSetItem.apply(this, arguments);
+        };
+        
+        const originalRemoveItem = localStorage.removeItem;
+        localStorage.removeItem = function(key) {
+            if (key.includes('supabase') || key.includes('auth') || key.includes('sb-')) {
+                log(`🗑️  localStorage.removeItem: ${key}`, 'error');
+            }
+            return originalRemoveItem.apply(this, arguments);
+        };
+        
+        const originalClear = localStorage.clear;
+        localStorage.clear = function() {
+            log(`🧹 localStorage.clear() called!`, 'error');
+            return originalClear.apply(this, arguments);
+        };
+    </script>
+</body>
+</html>
+

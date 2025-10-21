@@ -1,0 +1,364 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+import Image from "next/image"
+import { icons } from "@/lib/icons"
+import { Button } from "@/components/ui/button"
+
+
+const navigation = [
+  { name: "Dashboard", href: "/", icon: icons.dashboard },
+  { name: "Releases", href: "/releases", icon: icons.releases },
+  { name: "Upload", href: "/upload", icon: icons.upload },
+  { name: "Artist Tools", href: "/artist-tools", icon: icons.artistTools },
+  { name: "Analytics", href: "/analytics", icon: icons.analytics },
+  { name: "Industry Stats", href: "/industry-stats", icon: icons.barChart },
+  { name: "Beat Marketplace", href: "/beats", icon: icons.beats },
+  { name: "Artists", href: "/artists", icon: icons.artists },
+  { name: "Mastering", href: "/mastering", icon: icons.mastering },
+  { name: "Sync", href: "/sync", icon: icons.sync },
+  { name: "Payments", href: "/payments", icon: icons.payments },
+  { name: "Forum", href: "/forum", icon: icons.forum },
+  { name: "Settings", href: "/settings", icon: icons.settings },
+]
+
+const supportNav = { name: "Support", href: "/support", icon: icons.support }
+
+
+
+function CollapsedSidebarContent() {
+  const pathname = usePathname()
+
+  return (
+    <nav className="flex-1 px-3 py-6 space-y-2">
+      {navigation.map((item, index) => {
+        const isActive = pathname === item.href
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            className="block"
+          >
+            <div
+              className={cn(
+                "flex items-center justify-center h-11 w-11 rounded-lg relative group transition-colors duration-150",
+                isActive
+                  ? "bg-white/10 text-white shadow-lg backdrop-blur-sm border border-white/20"
+                  : "text-gray-400 hover:text-white hover:bg-white/5",
+              )}
+              title={item.name}
+            >
+              <item.icon className="h-5 w-5 transition-colors duration-150" />
+
+              {/* Active indicator */}
+              {isActive && (
+                <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-0.5 h-6 bg-white rounded-full" />
+              )}
+            </div>
+          </Link>
+        )
+      })}
+      {/* Support at bottom */}
+      <div className="mt-auto pt-6">
+        <Link
+          key={supportNav.name}
+          href={supportNav.href}
+          className="block"
+        >
+          <div
+            className={cn(
+              "flex items-center justify-center h-11 w-11 rounded-lg relative group",
+              pathname === supportNav.href
+                ? "bg-white/10 text-white shadow-lg backdrop-blur-sm border border-white/20"
+                : "text-gray-400 hover:text-white hover:bg-white/5",
+            )}
+            title={supportNav.name}
+          >
+            <supportNav.icon className="h-5 w-5 transition-colors duration-150" />
+          </div>
+        </Link>
+      </div>
+    </nav>
+  )
+}
+
+function ExpandedSidebarContent({ onItemClick }: { onItemClick?: () => void } = {}) {
+  const pathname = usePathname()
+  const router = useRouter()
+
+  return (
+    <nav className="flex-1 px-4 py-6 space-y-1">
+      {navigation.map((item, index) => {
+        const isActive = pathname === item.href
+        return (
+          <div
+            key={item.name}
+            onClick={() => {
+              onItemClick?.()
+              router.push(item.href)
+            }}
+            className={cn(
+              "flex items-center px-4 py-3 text-sm font-medium rounded-xl group relative transition-all duration-200 font-montserrat cursor-pointer active:scale-95",
+              isActive
+                ? "bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white backdrop-blur-sm border border-blue-500/30 shadow-lg shadow-blue-500/10"
+                : "text-gray-400 hover:text-white hover:bg-white/5",
+            )}
+          >
+            {/* Subtle hover effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            <item.icon className="h-5 w-5 flex-shrink-0 mr-3 transition-colors duration-150 relative z-10" />
+            <span className="truncate relative z-10 flex-1">{item.name}</span>
+
+            {/* Active indicator dot */}
+            {isActive && (
+              <div className="w-2 h-2 rounded-full bg-blue-400 ml-auto relative z-10 animate-pulse" />
+            )}
+          </div>
+        )
+      })}
+      {/* Support at bottom */}
+      <div className="mt-auto pt-6">
+        <div
+          onClick={() => {
+            onItemClick?.()
+            router.push(supportNav.href)
+          }}
+          className={cn(
+            "flex items-center px-4 py-3 text-sm font-medium rounded-xl group relative overflow-hidden font-montserrat cursor-pointer active:scale-95 transition-all duration-200",
+            pathname === supportNav.href
+              ? "bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-white backdrop-blur-sm border border-blue-500/30 shadow-lg shadow-blue-500/10"
+              : "text-gray-400 hover:text-white hover:bg-white/5",
+          )}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <supportNav.icon className="h-5 w-5 flex-shrink-0 mr-3 transition-colors duration-150 relative z-10" />
+          <span className="truncate relative z-10 flex-1">{supportNav.name}</span>
+          {pathname === supportNav.href && (
+            <div className="w-2 h-2 rounded-full bg-blue-400 ml-auto relative z-10 animate-pulse" />
+          )}
+        </div>
+      </div>
+    </nav>
+  )
+}
+
+export function Sidebar({ 
+  className,
+  collapsed = false,
+  onToggle,
+  mobileOpen = false,
+  onMobileClose
+}: { 
+  className?: string
+  collapsed?: boolean
+  onToggle?: () => void  
+  mobileOpen?: boolean
+  onMobileClose?: () => void
+}) {
+  const [isMounted, setIsMounted] = useState(false)
+  const [mobileCollapsed, setMobileCollapsed] = useState(false)
+  const pathname = usePathname()
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  
+  // Safe mounting for client-side only rendering
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+  
+  // Reset mobile collapsed state when sidebar closes
+  useEffect(() => {
+    if (!mobileOpen) {
+      setMobileCollapsed(false)
+    }
+  }, [mobileOpen])
+  
+  // Close mobile sidebar when route changes (only if expanded)
+  useEffect(() => {
+    if (mobileOpen && !mobileCollapsed && isMounted) {
+      onMobileClose?.()
+    }
+  }, [pathname])
+  
+  // Escape key handler
+  useEffect(() => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileOpen) {
+        onMobileClose?.()
+      }
+    }
+    
+    if (mobileOpen) {
+      window.addEventListener('keydown', handleEscapeKey)
+    }
+    
+    return () => window.removeEventListener('keydown', handleEscapeKey)
+  }, [mobileOpen, onMobileClose])
+
+  // Click outside handler (only when expanded)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mobileOpen && 
+        !mobileCollapsed &&
+        mobileMenuRef.current && 
+        !mobileMenuRef.current.contains(event.target as Node)
+      ) {
+        onMobileClose?.()
+      }
+    }
+    
+    if (mobileOpen && !mobileCollapsed) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [mobileOpen, mobileCollapsed, onMobileClose])
+
+  if (!isMounted) return null
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <div
+        className={cn(
+          "hidden md:flex flex-col h-full bg-black/95 border-r border-white/10 backdrop-blur-xl transition-all duration-500 ease-in-out flex-shrink-0",
+          collapsed ? "w-24" : "w-80",
+          className,
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-center p-4 border-b border-white/10 h-24">
+          {collapsed ? (
+            <div className="w-16 h-16 flex items-center justify-center">
+              <Image
+                src="/loaders/custom-loader.png"
+                alt="Logo"
+                width={56}
+                height={56}
+                className="rounded-sm"
+              />
+            </div>
+          ) : (
+            <Image src="/logo.png" alt="ONE Logo" width={120} height={40} className="rounded-lg" />
+          )}
+        </div>
+
+        {/* Navigation */}
+        {collapsed ? <CollapsedSidebarContent /> : <ExpandedSidebarContent />}
+
+        {/* Toggle Button */}
+        <div className="p-4 border-t border-white/10">
+          <Button
+            variant="ghost"
+            size={collapsed ? "icon" : "sm"}
+            onClick={onToggle}
+            className={cn(
+              "text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-150",
+              collapsed ? "w-11 h-11 mx-auto" : "w-full justify-start"
+            )}
+          >
+            <icons.chevronRight className={cn("h-4 w-4 transition-transform duration-200", !collapsed && "rotate-180")} />
+            {!collapsed && <span className="ml-2 text-sm font-medium">Collapse</span>}
+          </Button>
+        </div>
+
+        {/* Footer */}
+        {!collapsed && (
+          <div className="p-4 border-t border-white/10">
+            <div className="text-xs text-gray-500 text-center">
+              © 2025 OneSync
+              <div className="text-[10px] text-gray-600 mt-1">v2.1.0</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {mobileOpen && (
+        <>
+          {/* Mobile Backdrop - Only show when expanded */}
+          {!mobileCollapsed && (
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-200"
+              onClick={onMobileClose}
+            />
+          )}
+          
+          {/* Mobile Sidebar */}
+          <div 
+            ref={mobileMenuRef}
+            className={cn(
+              "fixed left-0 top-0 h-full bg-black/95 border-r border-white/10 backdrop-blur-xl z-50 md:hidden overflow-y-auto animate-in slide-in-from-left duration-300",
+              mobileCollapsed ? "w-24" : "w-80"
+            )}
+          >
+            {/* Mobile Header */}
+            <div className={cn(
+              "flex items-center p-4 border-b border-white/10 h-20",
+              mobileCollapsed ? "justify-center" : "justify-between"
+            )}>
+              <div className={cn(
+                "transition-all duration-200",
+                mobileCollapsed ? "w-0 opacity-0 overflow-hidden" : "opacity-100"
+              )}>
+                <Image src="/logo.png" alt="ONE Logo" width={100} height={33} className="rounded-lg" />
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Collapse/Expand Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setMobileCollapsed(!mobileCollapsed)
+                  }}
+                  className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-white hover:bg-white/20 active:bg-white/30 rounded-lg transition-all duration-200 active:scale-95"
+                  aria-label={mobileCollapsed ? "Expand menu" : "Collapse menu"}
+                  type="button"
+                >
+                  <icons.chevronRight className={cn("h-5 w-5 transition-transform duration-200", !mobileCollapsed && "rotate-180")} />
+                </button>
+                
+                {/* Close Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMobileClose?.()
+                  }}
+                  className={cn(
+                    "flex items-center justify-center w-10 h-10 text-gray-400 hover:text-white hover:bg-white/20 active:bg-white/30 rounded-lg transition-all duration-200 active:scale-95",
+                    mobileCollapsed && "w-0 opacity-0 overflow-hidden"
+                  )}
+                  aria-label="Close menu"
+                  type="button"
+                >
+                  <icons.close className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Navigation */}
+            {mobileCollapsed ? (
+              <CollapsedSidebarContent />
+            ) : (
+              <ExpandedSidebarContent onItemClick={onMobileClose} />
+            )}
+
+            {/* Mobile Footer */}
+            <div className={cn(
+              "p-4 border-t border-white/10 transition-opacity duration-200",
+              mobileCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"
+            )}>
+              <div className="text-xs text-gray-500 text-center">
+                © 2025 OneSync
+                <div className="text-[10px] text-gray-600 mt-1">v2.1.0</div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  )
+}

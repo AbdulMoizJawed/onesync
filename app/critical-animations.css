@@ -1,0 +1,110 @@
+/* CRITICAL ANIMATIONS - DO NOT PURGE */
+/* These are essential for login page functionality */
+
+/* Ensure these classes are always available */
+.animate-pulse-slow {
+  animation: animate-pulse-slow 8s ease-in-out infinite !important;
+}
+
+.animate-gradient-shift {
+  animation: animate-gradient-shift 15s ease-in-out infinite !important;
+  background-size: 400% 400% !important;
+}
+
+.animate-gentle-sway {
+  animation: animate-gentle-sway 12s ease-in-out infinite !important;
+}
+
+.animate-card-float {
+  animation: animate-card-float 8s ease-in-out infinite !important;
+}
+
+.animate-text-glow {
+  animation: animate-text-glow 4s ease-in-out infinite !important;
+}
+
+.animate-carousel-down {
+  animation: animate-carousel-down 25s linear infinite !important;
+}
+
+.animate-carousel-down-delayed {
+  animation: animate-carousel-down 25s linear infinite !important;
+  animation-delay: -12.5s !important;
+}
+
+/* Force include backdrop blur classes */
+.backdrop-blur-2xl {
+  backdrop-filter: blur(40px) !important;
+  -webkit-backdrop-filter: blur(40px) !important;
+}
+
+.backdrop-blur-xl {
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Force include opacity classes with slash notation */
+.bg-black\/20 {
+  background-color: rgb(0 0 0 / 0.2) !important;
+}
+
+.bg-white\/5 {
+  background-color: rgb(255 255 255 / 0.05) !important;
+}
+
+.bg-white\/10 {
+  background-color: rgb(255 255 255 / 0.1) !important;
+}
+
+.bg-white\/20 {
+  background-color: rgb(255 255 255 / 0.2) !important;
+}
+
+.border-white\/10 {
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+
+.border-white\/20 {
+  border-color: rgb(255 255 255 / 0.2) !important;
+}
+
+.border-white\/30 {
+  border-color: rgb(255 255 255 / 0.3) !important;
+}
+
+.text-white\/60 {
+  color: rgb(255 255 255 / 0.6) !important;
+}
+
+.text-white\/70 {
+  color: rgb(255 255 255 / 0.7) !important;
+}
+
+.text-white\/90 {
+  color: rgb(255 255 255 / 0.9) !important;
+}
+
+/* Login page specific gradient */
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops)) !important;
+}
+
+.from-gray-900 {
+  --tw-gradient-from: #111827 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(17 24 39 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.via-black {
+  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), #000 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+.to-gray-900 {
+  --tw-gradient-to: #111827 var(--tw-gradient-to-position) !important;
+}

@@ -1,0 +1,69 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import { getStripe } from '@/lib/stripe'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: NextRequest) {
+  try {
+    
+    const supabase = createRouteHandlerClient({ 
+      cookies: async () => await cookies()
+    })
+    const stripe = getStripe()
+    
+    const { searchParams } = new URL(request.url)
+    const accountId = searchParams.get('account_id')
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      // Redirect to login page
+      return NextResponse.redirect(new URL('/auth/login?redirect=/payments', request.url))
+    }
+
+    if (accountId) {
+      try {
+        // Check the account status
+        const account = await stripe.accounts.retrieve(accountId)
+        
+        // Update status in database
+        await supabase.rpc('create_or_update_stripe_account', {
+          p_user_id: user.id,
+          p_stripe_account_id: accountId,
+          p_account_type: 'express',
+          p_onboarding_completed: account.details_submitted,
+          p_payouts_enabled: account.payouts_enabled,
+          p_charges_enabled: account.charges_enabled,
+        })
+
+        // Redirect to payments page with success message
+        const redirectUrl = new URL('/payments', request.url)
+        redirectUrl.searchParams.set('setup', 'complete')
+        redirectUrl.searchParams.set('status', account.charges_enabled ? 'active' : 'pending')
+        
+        return NextResponse.redirect(redirectUrl)
+      } catch (error) {
+        console.error('Error handling onboarding return:', error)
+        
+        // Redirect to payments page with error
+        const redirectUrl = new URL('/payments', request.url)
+        redirectUrl.searchParams.set('error', 'setup_failed')
+        
+        return NextResponse.redirect(redirectUrl)
+      }
+    }
+
+    // If no account ID, redirect to payments page
+    return NextResponse.redirect(new URL('/payments', request.url))
+  } catch (error) {
+    console.error('Error in onboarding return:', error)
+    
+    // Redirect to error page
+    const errorUrl = new URL('/error', request.url)
+    errorUrl.searchParams.set('message', 'Failed to complete setup')
+    
+    return NextResponse.redirect(errorUrl)
+  }
+}
