@@ -3,10 +3,8 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import "./styles/animations.css"
-import { AuthProvider } from "@/lib/auth"
-import { ThemeProvider } from "@/components/theme-provider"
-import { SafeClientComponents } from "@/components/safe-client-components"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { Providers } from "./providers"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,12 +36,9 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-inter`}>
         <ErrorBoundary>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            <AuthProvider>
-              {children}
-              <SafeClientComponents />
-            </AuthProvider>
-          </ThemeProvider>
+          <Providers>
+            {children}
+          </Providers>
         </ErrorBoundary>
       </body>
     </html>
