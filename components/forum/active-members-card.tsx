@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/lib/auth"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Users } from "lucide-react"
 import { Profile, getDisplayName } from "@/lib/utils"
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 type ActiveMember = {
   id: string
@@ -20,64 +21,45 @@ export function ActiveMembersCard({ className = "" }: { className?: string }) {
   const [activeMembers, setActiveMembers] = useState<ActiveMember[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (user) {
-      fetchActiveMembers()
-      const interval = setInterval(fetchActiveMembers, 60000) // Update every minute
-      return () => clearInterval(interval)
-    }
-  }, [user])
-
-  const fetchActiveMembers = async () => {
-    if (!supabase) {
+  const fetchActiveMembers = useCallback(async () => {
+    console.log("🔍 [ActiveMembersCard] Fetching active members...")
+    
+    if (!supabase || !user) {
+      console.log("⚠️ [ActiveMembersCard] No supabase or user")
       setLoading(false)
       return
     }
     
     try {
-      // Get users with active sessions (last 5 minutes)
-      const fiveMinutesAgo = new Date()
-      fiveMinutesAgo.setMinutes(fiveMinutesAgo.getMinutes() - 5)
+      // Consider users active if they've been seen in the last 15 seconds
+      const fifteenSecondsAgo = new Date()
+      fifteenSecondsAgo.setSeconds(fifteenSecondsAgo.getSeconds() - 15)
 
-      // Check for users who have been active in the last 5 minutes
-      const { data: activeSessions } = await supabase
+      console.log("⏰ [ActiveMembersCard] Query parameters:", {
+        currentTime: new Date().toISOString(),
+        cutoffTime: fifteenSecondsAgo.toISOString(),
+        excludeUserId: user.id
+      })
+
+      const { data: activeUsers, error } = await supabase
         .from("profiles")
-        .select("id, email, full_name, username, avatar_url, bio, created_at, updated_at")
-        .gte("updated_at", fiveMinutesAgo.toISOString())
-        .neq("id", user?.id || "") // Exclude current user
+        .select("id, email, full_name, username, avatar_url, bio, created_at, updated_at, last_seen")
+        .gte("last_seen", fifteenSecondsAgo.toISOString())
+        .neq("id", user.id)
+        .order("last_seen", { ascending: false })
         .limit(10)
 
-      // If we don't have enough active users, look for recent forum activity (last 15 minutes)
-      let additionalActiveUsers: any[] = []
-      if (!activeSessions || activeSessions.length < 3) {
-        const fifteenMinutesAgo = new Date()
-        fifteenMinutesAgo.setMinutes(fifteenMinutesAgo.getMinutes() - 15)
-
-        const { data: recentActivity } = await supabase
-          .from("forum_posts")
-          .select(`
-            user_id,
-            profiles:user_id (id, email, full_name, username, avatar_url, bio, created_at, updated_at)
-          `)
-          .gte("created_at", fifteenMinutesAgo.toISOString())
-          .neq("user_id", user?.id || "")
-          .limit(5)
-
-        additionalActiveUsers = recentActivity?.map(item => item.profiles).filter(Boolean) || []
+      if (error) {
+        console.error("❌ [ActiveMembersCard] Query error:", error)
+        throw error
       }
 
-      // Combine active sessions and recent activity users, remove duplicates
-      const allActiveUsers = [...(activeSessions || []), ...additionalActiveUsers]
-      const uniqueUsers = allActiveUsers.reduce((acc: any[], current: any) => {
-        const exists = acc.find((item: any) => item.id === current.id)
-        if (!exists) {
-          acc.push(current)
-        }
-        return acc
-      }, [] as any[])
+      console.log("📊 [ActiveMembersCard] Query results:", {
+        foundUsers: activeUsers?.length || 0,
+        users: activeUsers
+      })
 
-      // Create active members array with only truly active users
-      const activeMembers: ActiveMember[] = uniqueUsers.slice(0, 8).map((profile: any) => ({
+      const activeMembers: ActiveMember[] = (activeUsers || []).map((profile: any) => ({
         id: profile.id,
         profile: {
           ...profile,
@@ -86,18 +68,66 @@ export function ActiveMembersCard({ className = "" }: { className?: string }) {
           created_at: profile.created_at || new Date().toISOString(),
           updated_at: profile.updated_at || new Date().toISOString()
         },
-        lastSeen: new Date(profile.updated_at || new Date()),
+        lastSeen: new Date(profile.last_seen || new Date()),
       }))
 
+      console.log("✅ [ActiveMembersCard] Setting active members:", activeMembers.length)
       setActiveMembers(activeMembers)
     } catch (error) {
-      console.error("Error fetching active members:", error)
+      console.error("💥 [ActiveMembersCard] Error fetching active members:", error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    console.log("🎯 [ActiveMembersCard] Component mounted, user:", user?.id)
+    
+    if (!user || !supabase) {
+      console.log("⚠️ [ActiveMembersCard] No user or supabase")
+      return
+    }
+
+    // Initial fetch
+    fetchActiveMembers()
+    
+    // Fetch active members every 5 seconds
+    console.log("⏰ [ActiveMembersCard] Starting fetch interval (5s)")
+    const fetchInterval = setInterval(() => {
+      console.log("🔄 [ActiveMembersCard] Auto-fetching active members...")
+      fetchActiveMembers()
+    }, 10000)
+
+    // Subscribe to realtime changes
+    console.log("🔌 [ActiveMembersCard] Setting up realtime subscription...")
+    const channel: RealtimeChannel = supabase
+      .channel('active-members')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          console.log("📡 [ActiveMembersCard] Realtime update received:", payload)
+          fetchActiveMembers()
+        }
+      )
+      .subscribe((status) => {
+        console.log("🔌 [ActiveMembersCard] Subscription status:", status)
+      })
+
+    // Cleanup
+    return () => {
+      console.log("🧹 [ActiveMembersCard] Cleaning up...")
+      clearInterval(fetchInterval)
+      supabase.removeChannel(channel)
+    }
+  }, [user, fetchActiveMembers])
 
   if (activeMembers.length === 0 && !loading) {
+    console.log("🚫 [ActiveMembersCard] No active members, hiding component")
     return null
   }
 

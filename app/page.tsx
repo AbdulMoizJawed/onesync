@@ -109,7 +109,7 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!isMounted) return
-    
+
     console.log("📊 Dashboard auth check - user:", user ? user.email : 'null', "authLoading:", authLoading)
 
     // Wait until auth provider finishes initializing
@@ -133,7 +133,7 @@ function DashboardContent() {
 
   const loadUserData = useCallback(async () => {
     if (!user || !supabase) return
-    
+
     try {
       setLoading(true)
       setError("")
@@ -147,9 +147,9 @@ function DashboardContent() {
         .single()
 
 
-      
+
       console.log("Profile result:", { profile, profileError })
-      
+
       if (profileError && profileError.code !== "PGRST116") {
         console.error("Profile error:", profileError)
         setError("Failed to load user profile")
@@ -180,11 +180,11 @@ function DashboardContent() {
           .limit(5)
       ])
 
-      
+
       const releases = releasesResult.data || []
       const analytics = analyticsResult.data || []
       const topReleasesData = topReleasesResult.data || []
-      console.log('log1',releases,analytics,topReleasesData)
+      console.log('log1', releases, analytics, topReleasesData)
 
       // Calculate stats from real data
       const totalReleases = releases.length
@@ -203,7 +203,7 @@ function DashboardContent() {
 
       // Set activity based on user status
       const activities: RecentActivity[] = []
-      
+
       if (totalReleases === 0) {
         activities.push({
           id: "1",
@@ -218,7 +218,7 @@ function DashboardContent() {
           timestamp: new Date().toISOString(),
           type: "success",
         })
-        
+
         if (revenue > 0) {
           activities.push({
             id: "2",
@@ -227,7 +227,7 @@ function DashboardContent() {
             type: "success",
           })
         }
-        
+
         if (releases.length > 1) {
           activities.push({
             id: "3",
@@ -279,14 +279,14 @@ function DashboardContent() {
     }
   }
 
-    const formatTimeAgo = (timestamp: string) => {
+  const formatTimeAgo = (timestamp: string) => {
     // Return consistent value for hydration - will be replaced by ClientTime component
     return "Just now"
   }
 
   return (
     <div className="flex min-h-screen bg-slate-950">
-      <Sidebar 
+      <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => {
           console.log('Desktop sidebar toggle called, current state:', sidebarCollapsed)
@@ -299,7 +299,7 @@ function DashboardContent() {
         }}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
+        <Header
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
           onToggleMobileSidebar={() => {
             console.log('Toggle mobile sidebar called, current state:', mobileSidebarOpen)
@@ -343,60 +343,63 @@ function DashboardContent() {
               <>
                 {/* Quick Stats - 2x2 Grid on Mobile, 3 across on Desktop */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 mb-4 sm:mb-6">
-                  <Card className={`bg-slate-900/80 border-slate-800/50 ${animations.cardSlideUp} ${animations.staggerDelay(0)} hover:scale-102 transition-all duration-250 backdrop-blur-sm`}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
-                      <CardTitle className="text-xs sm:text-sm font-medium text-gray-400">Releases</CardTitle>
-                      <Music className="h-4 w-4 text-gray-400" />
-                    </CardHeader>
-                    <CardContent className="p-3 sm:p-4 pt-0">
-                      <div className="text-xl sm:text-2xl font-bold text-white font-montserrat">{stats.totalReleases}</div>
-                      <p className="text-xs text-gray-500 mt-0.5">{stats.totalReleases === 0 ? (
-                        <span className="flex items-center">
-                          <span className="inline-block w-2 h-2 bg-gray-600 rounded-full mr-1 animate-pulse"></span>
-                          Upload first
-                        </span>
-                      ) : "Active"}</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className={`bg-slate-900/80 border-slate-800/50 ${animations.cardSlideUp} ${animations.staggerDelay(1)} hover:scale-102 transition-all duration-250 backdrop-blur-sm`}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
-                      <CardTitle className="text-xs sm:text-sm font-medium text-gray-400">Revenue</CardTitle>
-                      <TrendingUp className="h-4 w-4 text-green-400" />
-                    </CardHeader>
-                    <CardContent className="p-3 sm:p-4 pt-0">
-                      <div className="text-xl sm:text-2xl font-bold text-white font-montserrat">${stats.revenue.toFixed(2)}</div>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {stats.revenue === 0 ? (
+                  <Link href="/releases">
+                    <Card className={`bg-slate-900/80 border-slate-800/50 ${animations.cardSlideUp} ${animations.staggerDelay(0)} hover:scale-102 transition-all duration-250 backdrop-blur-sm`}>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-gray-400">Releases</CardTitle>
+                        <Music className="h-4 w-4 text-gray-400" />
+                      </CardHeader>
+                      <CardContent className="p-3 sm:p-4 pt-0">
+                        <div className="text-xl sm:text-2xl font-bold text-white font-montserrat">{stats.totalReleases}</div>
+                        <p className="text-xs text-gray-500 mt-0.5">{stats.totalReleases === 0 ? (
                           <span className="flex items-center">
                             <span className="inline-block w-2 h-2 bg-gray-600 rounded-full mr-1 animate-pulse"></span>
-                            Waiting
+                            Upload first
                           </span>
-                        ) : "Total earned"}
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className={`bg-slate-900/80 border-slate-800/50 ${animations.cardSlideUp} ${animations.staggerDelay(2)} hover:scale-102 transition-all duration-250 backdrop-blur-sm`}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
-                      <CardTitle className="text-xs sm:text-sm font-medium text-gray-400">Streams</CardTitle>
-                      <Headphones className="h-4 w-4 text-gray-400" />
-                    </CardHeader>
-                    <CardContent className="p-3 sm:p-4 pt-0">
-                      <div className="text-xl sm:text-2xl font-bold text-white font-montserrat">
-                        {stats.totalStreams.toLocaleString()}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {stats.totalStreams === 0 ? (
-                          <span className="flex items-center">
-                            <span className="inline-block w-2 h-2 bg-gray-600 rounded-full mr-1 animate-pulse"></span>
-                            Awaiting data
-                          </span>
-                        ) : "All time"}
-                      </p>
-                    </CardContent>
-                  </Card>
-
+                        ) : "Active"}</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  <Link href="/payments">
+                    <Card className={`bg-slate-900/80 border-slate-800/50 ${animations.cardSlideUp} ${animations.staggerDelay(1)} hover:scale-102 transition-all duration-250 backdrop-blur-sm`}>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-gray-400">Revenue</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                      </CardHeader>
+                      <CardContent className="p-3 sm:p-4 pt-0">
+                        <div className="text-xl sm:text-2xl font-bold text-white font-montserrat">${stats.revenue.toFixed(2)}</div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {stats.revenue === 0 ? (
+                            <span className="flex items-center">
+                              <span className="inline-block w-2 h-2 bg-gray-600 rounded-full mr-1 animate-pulse"></span>
+                              Waiting
+                            </span>
+                          ) : "Total earned"}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  <Link href="/beats">
+                    <Card className={`bg-slate-900/80 border-slate-800/50 ${animations.cardSlideUp} ${animations.staggerDelay(2)} hover:scale-102 transition-all duration-250 backdrop-blur-sm`}>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-gray-400">Streams</CardTitle>
+                        <Headphones className="h-4 w-4 text-gray-400" />
+                      </CardHeader>
+                      <CardContent className="p-3 sm:p-4 pt-0">
+                        <div className="text-xl sm:text-2xl font-bold text-white font-montserrat">
+                          {stats.totalStreams.toLocaleString()}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {stats.totalStreams === 0 ? (
+                            <span className="flex items-center">
+                              <span className="inline-block w-2 h-2 bg-gray-600 rounded-full mr-1 animate-pulse"></span>
+                              Awaiting data
+                            </span>
+                          ) : "All time"}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </div>
 
                 {/* Quick Access Tools - Only visible on mobile/tablet */}
@@ -483,8 +486,8 @@ function DashboardContent() {
                     <CardContent className="p-4 sm:p-6 pt-0">
                       <div className="space-y-2 sm:space-y-3">
                         {topReleases.map((release, index) => (
-                          <div 
-                            key={release.id} 
+                          <div
+                            key={release.id}
                             className="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg hover:bg-gray-800/50 transition-colors cursor-pointer"
                             onClick={() => router.push(`/releases/${release.id}`)}
                           >
@@ -651,9 +654,9 @@ function DashboardContent() {
                               <div className={`w-2 h-2 rounded-full ${getActivityIcon(activity.type)} animate-ping`}></div>
                               <div className="flex-1">
                                 <p className="text-sm text-white">{activity.message}</p>
-                                <ClientTime 
-                                  timestamp={activity.timestamp} 
-                                  className="text-xs text-gray-500" 
+                                <ClientTime
+                                  timestamp={activity.timestamp}
+                                  className="text-xs text-gray-500"
                                 />
                               </div>
                             </div>
@@ -666,7 +669,7 @@ function DashboardContent() {
 
                 {/* Analytics Visualizations */}
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                  <RevenueChart 
+                  <RevenueChart
                     data={stats.totalStreams > 0 ? [
                       { month: "Jan", revenue: 0, streams: 0 },
                       { month: "Feb", revenue: 0, streams: 0 },
@@ -676,7 +679,7 @@ function DashboardContent() {
                       { month: "Jun", revenue: 0, streams: 0 }
                     ] : []}
                   />
-                  <WorldMap 
+                  <WorldMap
                     locations={stats.totalStreams > 0 ? [
                       { id: "1", country: "United States", city: "New York", streams: 0, revenue: 0, region: "North America" },
                       { id: "2", country: "United Kingdom", city: "London", streams: 0, revenue: 0, region: "Europe" },
@@ -720,17 +723,17 @@ function DashboardContent() {
           </div>
         </main>
       </div>
-      
+
       {/* Onboarding Wizard */}
-      <OnboardingWizard 
-        isOpen={isNewUser || false} 
+      <OnboardingWizard
+        isOpen={isNewUser || false}
         onClose={() => {
           completeOnboarding()
           // Refresh the dashboard data
           loadUserData()
-        }} 
+        }}
       />
-      
+
       {/* Floating Intercom Support Button */}
       <IntercomFloatingButton />
 

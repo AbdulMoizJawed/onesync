@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useAuth, supabase } from "@/lib/auth"
+import { useState, useEffect, useCallback } from "react"
+import { useAuth } from "@/lib/auth"
+import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageSquare, Users, Search, Plus, X } from "lucide-react"
 import { Profile, getDisplayName } from "@/lib/utils"
 import Link from "next/link"
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 type OnlineUser = {
   id: string
@@ -20,104 +22,50 @@ type OnlineUser = {
 
 export function MessagingSidebar() {
   const { user } = useAuth()
-  const [isExpanded, setIsExpanded] = useState(true) // Default to open
+  const [isExpanded, setIsExpanded] = useState(true)
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (user) {
-      fetchOnlineUsers()
-      const interval = setInterval(fetchOnlineUsers, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [user])
-
-  const fetchOnlineUsers = async () => {
-    if (!supabase) {
+  const fetchOnlineUsers = useCallback(async () => {
+    console.log("🔍 [MessagingSidebar] Fetching online users...")
+    
+    if (!supabase || !user) {
+      console.log("⚠️ [MessagingSidebar] No supabase or user")
       setLoading(false)
       return
     }
     
     try {
-      setLoading(true)
-      const fifteenMinutesAgo = new Date()
-      fifteenMinutesAgo.setMinutes(fifteenMinutesAgo.getMinutes() - 15)
+      // Consider users active if they've been seen in the last 15 seconds
+      const fifteenSecondsAgo = new Date()
+      fifteenSecondsAgo.setSeconds(fifteenSecondsAgo.getSeconds() - 15)
 
-      // Try to get recent activity, but handle potential schema issues gracefully
-      let activeUserIds = new Set<string>()
+      console.log("⏰ [MessagingSidebar] Query parameters:", {
+        currentTime: new Date().toISOString(),
+        cutoffTime: fifteenSecondsAgo.toISOString(),
+        excludeUserId: user.id
+      })
 
-      try {
-        const { data: recentPosts } = await supabase
-          .from("forum_posts")
-          .select("user_id")
-          .gte("created_at", fifteenMinutesAgo.toISOString())
-          .limit(20)
-
-        if (recentPosts) {
-          recentPosts.forEach(p => p.user_id && activeUserIds.add(p.user_id))
-        }
-      } catch (postsError) {
-        console.warn("Could not fetch recent posts:", postsError)
-      }
-
-      try {
-        const { data: recentComments } = await supabase
-          .from("forum_comments")
-          .select("author_id")
-          .gte("created_at", fifteenMinutesAgo.toISOString())
-          .limit(20)
-
-        if (recentComments) {
-          recentComments.forEach(c => c.author_id && activeUserIds.add(c.author_id))
-        }
-      } catch (commentsError) {
-        console.warn("Could not fetch recent comments:", commentsError)
-      }
-
-      // Always show some users - get recent profiles if no activity
-      if (activeUserIds.size < 3) {
-        try {
-          const { data: recentProfiles } = await supabase
-            .from("profiles")
-            .select("id")
-            .not("username", "is", null)
-            .order("created_at", { ascending: false })
-            .limit(5)
-
-          if (recentProfiles) {
-            recentProfiles.forEach(p => activeUserIds.add(p.id))
-          }
-        } catch (profilesError) {
-          console.warn("Could not fetch recent profiles:", profilesError)
-        }
-      }
-
-      // Exclude current user from the list
-      if (user?.id) {
-        activeUserIds.delete(user.id)
-      }
-
-      if (activeUserIds.size === 0) {
-        setOnlineUsers([])
-        setLoading(false)
-        return
-      }
-
-      // Fetch user profiles
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: activeUsers, error } = await supabase
         .from("profiles")
-        .select("id, email, full_name, username, avatar_url, bio, created_at, updated_at")
-        .in("id", Array.from(activeUserIds))
-        .limit(10)
+        .select("id, email, full_name, username, avatar_url, bio, created_at, updated_at, last_seen")
+        .gte("last_seen", fifteenSecondsAgo.toISOString())
+        .neq("id", user.id)
+        .order("last_seen", { ascending: false })
+        .limit(20)
 
-      if (profilesError) {
-        console.error("Error fetching profiles:", profilesError)
-        setOnlineUsers([])
-        return
+      if (error) {
+        console.error("❌ [MessagingSidebar] Query error:", error)
+        throw error
       }
 
-      const onlineUsersData: OnlineUser[] = (profiles || []).map((profile) => ({
+      console.log("📊 [MessagingSidebar] Query results:", {
+        foundUsers: activeUsers?.length || 0,
+        users: activeUsers
+      })
+
+      const onlineUsersData: OnlineUser[] = (activeUsers || []).map((profile: any) => ({
         id: profile.id,
         profile: {
           ...profile,
@@ -126,17 +74,64 @@ export function MessagingSidebar() {
           created_at: profile.created_at || new Date().toISOString(),
           updated_at: profile.updated_at || new Date().toISOString()
         },
-        lastSeen: new Date(),
+        lastSeen: new Date(profile.last_seen || new Date()),
       }))
 
+      console.log("✅ [MessagingSidebar] Setting online users:", onlineUsersData.length)
       setOnlineUsers(onlineUsersData)
     } catch (error) {
-      console.error("Error fetching online users:", error)
-      setOnlineUsers([]) // Set empty array on error to prevent crashes
+      console.error("💥 [MessagingSidebar] Error fetching online users:", error)
+      setOnlineUsers([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    console.log("🎯 [MessagingSidebar] Component mounted, user:", user?.id)
+    
+    if (!user || !supabase) {
+      console.log("⚠️ [MessagingSidebar] No user or supabase")
+      return
+    }
+
+    // Initial fetch
+    fetchOnlineUsers()
+    
+    // Fetch online users every 5 seconds
+    console.log("⏰ [MessagingSidebar] Starting fetch interval (5s)")
+    const fetchInterval = setInterval(() => {
+      console.log("🔄 [MessagingSidebar] Auto-fetching online users...")
+      fetchOnlineUsers()
+    }, 10000)
+
+    // Subscribe to realtime changes
+    console.log("🔌 [MessagingSidebar] Setting up realtime subscription...")
+    const channel: RealtimeChannel = supabase
+      .channel('online-users-sidebar')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          console.log("📡 [MessagingSidebar] Realtime update received:", payload)
+          fetchOnlineUsers()
+        }
+      )
+      .subscribe((status) => {
+        console.log("🔌 [MessagingSidebar] Subscription status:", status)
+      })
+
+    // Cleanup
+    return () => {
+      console.log("🧹 [MessagingSidebar] Cleaning up...")
+      clearInterval(fetchInterval)
+      supabase.removeChannel(channel)
+    }
+  }, [user, fetchOnlineUsers])
 
   const filteredUsers = onlineUsers.filter((user) =>
     getDisplayName(user.profile).toLowerCase().includes(searchTerm.toLowerCase()),
@@ -158,7 +153,6 @@ export function MessagingSidebar() {
 
       {isExpanded && (
         <>
-          {/* Mobile overlay backdrop */}
           <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsExpanded(false)} />
           
           <div className="px-3 sm:px-4 pb-4 space-y-3 sm:space-y-4 relative z-50">

@@ -285,42 +285,77 @@ export default function ForumPage() {
     }
   }, [user])
 
-  const fetchStats = useCallback(async () => {
-    if (!supabase) return
+  // const fetchStats = useCallback(async () => {
+  //   if (!supabase) return
     
-    try {
-      const { count: totalPosts } = await supabase.from("forum_posts").select("*", { count: "exact", head: true })
+  //   try {
+  //     const { count: totalPosts } = await supabase.from("forum_posts").select("*", { count: "exact", head: true })
 
-      const weekAgo = new Date()
-      weekAgo.setDate(weekAgo.getDate() - 7)
+  //     const weekAgo = new Date()
+  //     weekAgo.setDate(weekAgo.getDate() - 7)
 
-      const { count: postsThisWeek } = await supabase
-        .from("forum_posts")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", weekAgo.toISOString())
+  //     const { count: postsThisWeek } = await supabase
+  //       .from("forum_posts")
+  //       .select("*", { count: "exact", head: true })
+  //       .gte("created_at", weekAgo.toISOString())
 
-      const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true })
+  //     const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true })
 
-      const monthAgo = new Date()
-      monthAgo.setDate(monthAgo.getDate() - 30)
+  //     const monthAgo = new Date()
+  //     monthAgo.setDate(monthAgo.getDate() - 30)
 
-      const { data: activeUsersData } = await supabase
-        .from("forum_posts")
-        .select("user_id")
-        .gte("created_at", monthAgo.toISOString())
+  //     const { data: activeUsersData } = await supabase
+  //       .from("forum_posts")
+  //       .select("user_id")
+  //       .gte("created_at", monthAgo.toISOString())
 
-      const activeUsers = new Set(activeUsersData?.map((post) => post.user_id) || []).size
+  //     const activeUsers = new Set(activeUsersData?.map((post) => post.user_id) || []).size
 
-      setStats({
-        totalPosts: totalPosts || 0,
-        postsThisWeek: postsThisWeek || 0,
-        totalUsers: totalUsers || 0,
-        activeUsers: activeUsers || 0,
-      })
-    } catch (error) {
-      console.error("Error fetching stats:", error)
-    }
-  }, [])
+  //     setStats({
+  //       totalPosts: totalPosts || 0,
+  //       postsThisWeek: postsThisWeek || 0,
+  //       totalUsers: totalUsers || 0,
+  //       activeUsers: activeUsers || 0,
+  //     })
+  //   } catch (error) {
+  //     console.error("Error fetching stats:", error)
+  //   }
+  // }, [])
+  const fetchStats = useCallback(async () => {
+  if (!supabase) return
+  
+  try {
+    const { count: totalPosts } = await supabase.from("forum_posts").select("*", { count: "exact", head: true })
+
+    const weekAgo = new Date()
+    weekAgo.setDate(weekAgo.getDate() - 7)
+
+    const { count: postsThisWeek } = await supabase
+      .from("forum_posts")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", weekAgo.toISOString())
+
+    const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true })
+
+    // Get active users based on last_seen in the last 15 seconds (real-time online users)
+    const fifteenSecondsAgo = new Date()
+    fifteenSecondsAgo.setSeconds(fifteenSecondsAgo.getSeconds() - 15)
+
+    const { count: activeUsers } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .gte("last_seen", fifteenSecondsAgo.toISOString())
+
+    setStats({
+      totalPosts: totalPosts || 0,
+      postsThisWeek: postsThisWeek || 0,
+      totalUsers: totalUsers || 0,
+      activeUsers: activeUsers || 0,
+    })
+  } catch (error) {
+    console.error("Error fetching stats:", error)
+  }
+}, [])
 
   const fetchForumData = useCallback(async () => {
     if (!supabase) {
@@ -347,11 +382,30 @@ export default function ForumPage() {
     }
   }, [fetchCategories, fetchPosts, fetchStats])
 
-  useEffect(() => {
-    if (user) {
-      fetchForumData()
-    }
-  }, [user, fetchForumData])
+  // useEffect(() => {
+  //   if (user) {
+  //     fetchForumData()
+  //   }
+  // }, [user, fetchForumData])
+  
+useEffect(() => {
+  if (user) {
+    fetchForumData()
+  }
+}, [user, fetchForumData])
+
+// Separate useEffect for stats auto-refresh
+useEffect(() => {
+  if (!user) return
+
+  const statsInterval = setInterval(() => {
+    fetchStats()
+  }, 5000)
+
+  return () => {
+    clearInterval(statsInterval)
+  }
+}, [user, fetchStats])
 
   useEffect(() => {
     if (user) {
@@ -568,7 +622,7 @@ export default function ForumPage() {
                       </div>
 
                       {/* Mobile Active Members - Only visible on mobile */}
-                      <div className="mb-4 md:hidden">
+                      <div className="mb-4  md:hidden">
                         <ActiveMembersCard className="mb-4" />
                       </div>
 
