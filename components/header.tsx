@@ -21,6 +21,7 @@ import { Profile, getDisplayName } from "@/lib/utils"
 import { useHapticFeedback } from "@/lib/haptics"
 import { animations } from "@/lib/animations"
 import CustomLoader from "@/components/ui/custom-loader"
+import Link from "next/link"
 
 
 
@@ -47,7 +48,7 @@ export function Header({
     const frame = requestAnimationFrame(() => {
       setIsMounted(true)
     })
-    
+
     return () => cancelAnimationFrame(frame)
   }, [])
 
@@ -119,15 +120,21 @@ export function Header({
             />
           </div>
         </div> */}
+
       </div>
 
       {/* Right side actions */}
       <div className="flex items-center gap-2 sm:gap-3">
+        <Link href="/messages">
+          <Button  className="cursor-pointer">
+            Messages
+          </Button>
+        </Link>
         {/* Intercom Help Button - Hidden on Mobile */}
         <div className="hidden md:block">
           <IntercomButton variant="help" size="sm" />
         </div>
-        
+
         {/* Notifications */}
         <EnhancedNotificationCenter />
 
@@ -141,8 +148,8 @@ export function Header({
             >
               <Avatar className="h-9 w-9">
                 {profile?.avatar_url && (
-                  <AvatarImage 
-                    src={profile.avatar_url} 
+                  <AvatarImage
+                    src={profile.avatar_url}
                     alt={user?.email}
                     className="object-cover"
                   />
@@ -158,7 +165,7 @@ export function Header({
               <div className="flex items-center space-x-3">
                 <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                   {profile?.avatar_url && (
-                    <AvatarImage 
+                    <AvatarImage
                       src={profile.avatar_url}
                       className="object-cover"
                     />

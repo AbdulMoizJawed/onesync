@@ -19,7 +19,7 @@ const navigation = [
   { name: "Beat Marketplace", href: "/beats", icon: icons.beats },
   { name: "Artists", href: "/artists", icon: icons.artists },
   { name: "Mastering", href: "/mastering", icon: icons.mastering },
-  { name: "Messages", href: "/messages", icon: icons.forum },
+  // { name: "Messages", href: "/messages", icon: icons.forum },
   { name: "Forum", href: "/forum", icon: icons.forum },
   { name: "Sync", href: "/sync", icon: icons.sync },
   { name: "Payments", href: "/payments", icon: icons.payments },

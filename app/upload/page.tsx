@@ -1094,6 +1094,7 @@ export default function UploadPage() {
         
         uploadResult = await uploadResponse.json()
         console.log('✅ Files uploaded successfully to Supabase Storage')
+        router.push('/artist-tools')
       } catch (uploadError) {
         console.error('❌ Error uploading files:', uploadError)
         throw new Error(uploadError instanceof Error ? uploadError.message : 'File upload failed')
