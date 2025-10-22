@@ -427,7 +427,7 @@ export function EditRelease({ releaseId, onCancel, onUpdate }: EditReleaseProps)
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
-        <CustomLoader animation={animations.orbit} />
+        <CustomLoader />
       </div>
     )
   }
@@ -461,7 +461,7 @@ export function EditRelease({ releaseId, onCancel, onUpdate }: EditReleaseProps)
             >
               {saving ? (
                 <>
-                  <CustomLoader animation={animations.spin} />
+                  <CustomLoader   />
                   <span className="ml-2">Saving...</span>
                 </>
               ) : uploading ? (
@@ -1005,7 +1005,7 @@ export function EditRelease({ releaseId, onCancel, onUpdate }: EditReleaseProps)
           >
             {saving ? (
               <>
-                <CustomLoader animation={animations.spin} />
+                <CustomLoader  />
                 <span className="ml-2">Saving...</span>
               </>
             ) : uploading ? (
