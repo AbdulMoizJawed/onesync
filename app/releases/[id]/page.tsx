@@ -490,7 +490,7 @@ export default function ReleaseDetailPage() {
 
                         <div className="flex items-center gap-2">
                           {getStatusBadge(release.status || 'draft')}
-                          {(release.explicit || metadata.explicit) && (
+                          {( metadata.explicit) && (
                             <Badge variant="outline" className="border-red-500 text-red-400">
                               Explicit
                             </Badge>
@@ -709,12 +709,12 @@ export default function ReleaseDetailPage() {
                             </div>
                           </div>
 
-                          {release.description && (
-                            <div>
-                              <Label className="text-gray-400 text-sm">Description</Label>
-                              <p className="text-white mt-1">{release.description}</p>
-                            </div>
-                          )}
+                      {metadata?.description && (
+  <div>
+    <Label className="text-gray-400 text-sm">Description</Label>
+    <p className="text-white mt-1">{metadata.description}</p>
+  </div>
+)}
                         </CardContent>
                       </Card>
 
