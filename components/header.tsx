@@ -108,8 +108,7 @@ export function Header({
 
       {/* Desktop Left side - Search */}
       <div className="hidden md:flex items-center gap-3 sm:gap-4 flex-1">
-        {/* Search Bar - Desktop Only */}
-        <div className="hidden lg:flex items-center flex-1 max-w-md">
+        {/* <div className="hidden lg:flex items-center flex-1 max-w-md">
           <div className="relative w-full group">
             <IconComponent name="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-gray-300 transition-colors duration-300" />
             <input
@@ -119,7 +118,7 @@ export function Header({
               onClick={() => light()}
             />
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Right side actions */}

@@ -6,3 +6,6 @@ node_modules
 code.js
 collected-code.txt
 .env
+
+.next
+admin/.next
