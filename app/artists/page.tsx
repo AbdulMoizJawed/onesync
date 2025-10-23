@@ -40,8 +40,6 @@ const ArtistSearch = dynamic(() => import("@/components/artist-search").then(mod
   loading: () => <p>Loading...</p>
 })
 
-// Using imported `Artist` type from `@/lib/supabase`
-
 type ArtistWithEarnings = Artist & {
   totalEarnings?: number
   pendingPayouts?: number
@@ -51,7 +49,6 @@ type ArtistWithEarnings = Artist & {
   [key: string]: any
 }
 
-// Memoized Artist Card Component for better performance
 const ArtistCard = React.memo(({ 
   artist, 
   index, 
@@ -149,7 +146,6 @@ export default function ArtistsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredArtists, setFilteredArtists] = useState<ArtistWithEarnings[]>([])
 
-  // Form state
   const [artistName, setArtistName] = useState("")
   const [artistBio, setArtistBio] = useState("")
   const [artistGenre, setArtistGenre] = useState("")
@@ -158,9 +154,7 @@ export default function ArtistsPage() {
   const [spotifyUrl, setSpotifyUrl] = useState("")
   const [selectedSpotifyArtist, setSelectedSpotifyArtist] = useState<ArtistSearchResult | null>(null)
   const [updatingImages, setUpdatingImages] = useState(false)
-  
 
-  // Filter artists based on search term
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredArtists(artists)
@@ -173,8 +167,6 @@ export default function ArtistsPage() {
       setFilteredArtists(filtered)
     }
   }, [artists, searchTerm])
-
-  
 
   const fetchArtists = useCallback(async () => {
     if (!user) return
@@ -193,17 +185,9 @@ export default function ArtistsPage() {
 
       if (fetchError) {
         console.error("Error fetching artists:", fetchError)
-        // Handle JSON parse errors gracefully
         const errorMessage = fetchError.message || "Unknown error occurred"
         setError(`Failed to load artists: ${errorMessage}`)
       } else {
-        // Fetch all artist data in batch to avoid N+1 queries
-        const artistIds = data.map(artist => artist.id)
-        
-        // For now, we'll just set basic artist data without earnings/collaborations
-        // This can be re-enabled later if needed
-
-        // Just use the basic artist data without additional processing
         const enhancedArtists = data.map(artist => ({
           ...artist,
           totalEarnings: 0,
@@ -220,9 +204,6 @@ export default function ArtistsPage() {
       setLoading(false)
     }
   }, [user])
-
-
-
 
   const resetForm = () => {
     setArtistName("")
@@ -263,14 +244,13 @@ export default function ArtistsPage() {
         genre: artistGenre.trim() || null,
         location: artistLocation.trim() || null,
         image: artistImage || null,
-        avatar_url: artistImage || null, // Keep both columns in sync
+        avatar_url: artistImage || null,
         spotify_url: spotifyUrl || null,
-        spotify: spotifyUrl || null, // Keep both columns in sync
+        spotify: spotifyUrl || null,
       }
 
       let result
       if (editingArtist) {
-        // Update existing artist
         if (!supabase) return
         
         result = await supabase
@@ -286,9 +266,8 @@ export default function ArtistsPage() {
             spotify: artistData.spotify,
           })
           .eq("id", editingArtist.id)
-          .eq("user_id", user.id) // Extra security check
+          .eq("user_id", user.id)
       } else {
-        // Create new artist
         if (!supabase) return
         
         result = await supabase.from("artists").insert(artistData)
@@ -300,7 +279,7 @@ export default function ArtistsPage() {
       } else {
         setIsDialogOpen(false)
         resetForm()
-        await fetchArtists() // Refresh the list
+        await fetchArtists()
       }
     } catch (err) {
       console.error("Unexpected error saving artist:", err)
@@ -316,13 +295,13 @@ export default function ArtistsPage() {
     try {
       if (!supabase) return
       
-      const { error: deleteError } = await supabase.from("artists").delete().eq("id", artistId).eq("user_id", user?.id) // Extra security check
+      const { error: deleteError } = await supabase.from("artists").delete().eq("id", artistId).eq("user_id", user?.id)
 
       if (deleteError) {
         console.error("Error deleting artist:", deleteError)
         setError(`Failed to delete artist: ${deleteError.message}`)
       } else {
-        await fetchArtists() // Refresh the list
+        await fetchArtists()
       }
     } catch (err) {
       console.error("Unexpected error deleting artist:", err)
@@ -366,9 +345,7 @@ export default function ArtistsPage() {
       if (response.ok) {
         if (result.updated > 0) {
           setError(null)
-          // Show success message
           toast.success(`Successfully updated ${result.updated} artist images from Spotify!`)
-          // Refresh the artists list
           await fetchArtists()
         } else {
           toast.info('All your artists already have images!')
@@ -385,8 +362,6 @@ export default function ArtistsPage() {
       setUpdatingImages(false)
     }
   }
-
-
 
   if (!user) {
     return (
@@ -445,164 +420,171 @@ export default function ArtistsPage() {
               )}
 
               <div className="space-y-6 px-2 sm:px-0">
-                  {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                      {[...Array(6)].map((_, i) => (
-                        <ArtistCardSkeleton key={i} />
-                      ))}
-                    </div>
-                  ) : filteredArtists.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 px-2 sm:px-0">
-                  {filteredArtists.map((artist, index) => (
-                    <ArtistCard
-                      key={artist.id}
-                      artist={artist}
-                      index={index}
-                      onEdit={openEditDialog}
-                      onDelete={handleDeleteArtist}
-                    />
-                  ))}
-                </div>
-                  ) : searchTerm ? (
-                    <div className="text-center py-16 border-2 border-dashed border-gray-800 rounded-lg">
-                      <IconComponent name="search" className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                      <h2 className="text-xl font-semibold text-white mb-2">No Artists Found</h2>
-                      <p className="text-gray-500 mb-4">No artists match your search &quot;{searchTerm}&quot;.</p>
-                      <Button onClick={() => setSearchTerm("")} variant="outline" className="border-gray-600 text-gray-400 hover:bg-gray-800">
-                        Clear Search
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-16 border-2 border-dashed border-gray-800 rounded-lg">
-                      <IconComponent name="user" className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                      <h2 className="text-xl font-semibold text-white mb-2">No Artists Found</h2>
-                      <p className="text-gray-500 mb-4">Get started by adding your first artist profile.</p>
-                      <Button onClick={openNewDialog} className="button-primary">
-                        Add Your First Artist
-                      </Button>
-                    </div>
-                  )}
+                {loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                    {[...Array(6)].map((_, i) => (
+                      <ArtistCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : filteredArtists.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 px-2 sm:px-0 pb-20">
+                    {filteredArtists.map((artist, index) => (
+                      <ArtistCard
+                        key={artist.id}
+                        artist={artist}
+                        index={index}
+                        onEdit={openEditDialog}
+                        onDelete={handleDeleteArtist}
+                      />
+                    ))}
+                  </div>
+                ) : searchTerm ? (
+                  <div className="text-center py-16 border-2 border-dashed border-gray-800 rounded-lg">
+                    <IconComponent name="search" className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-white mb-2">No Artists Found</h2>
+                    <p className="text-gray-500 mb-4">No artists match your search &quot;{searchTerm}&quot;.</p>
+                    <Button onClick={() => setSearchTerm("")} variant="outline" className="border-gray-600 text-gray-400 hover:bg-gray-800">
+                      Clear Search
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-16 border-2 border-dashed border-gray-800 rounded-lg">
+                    <IconComponent name="user" className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-white mb-2">No Artists Found</h2>
+                    <p className="text-gray-500 mb-4">Get started by adding your first artist profile.</p>
+                    <Button onClick={openNewDialog} className="button-primary">
+                      Add Your First Artist
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-md mx-4 sm:mx-auto max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="sticky top-0 bg-gray-900 pb-4 z-10">
-                  <DialogTitle>{editingArtist ? "Edit Artist" : "Add New Artist"}</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="bg-gray-900 border-gray-700 text-white w-[calc(100%-2rem)] max-w-md mx-auto max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b border-gray-800">
+                  <DialogTitle className="text-lg sm:text-xl">{editingArtist ? "Edit Artist" : "Add New Artist"}</DialogTitle>
+                  <DialogDescription className="text-sm">
                     {editingArtist
                       ? "Update the details for this artist."
                       : "Add a new artist profile to your account."}
                   </DialogDescription>
                 </DialogHeader>
 
-                {error && (
-                  <Alert className="border-red-500 bg-red-500/10">
-                    <IconComponent name="alert" className="h-4 w-4" />
-                    <AlertDescription className="text-red-400">{error}</AlertDescription>
-                  </Alert>
-                )}
+                <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+                  {error && (
+                    <Alert className="border-red-500 bg-red-500/10 mb-4">
+                      <IconComponent name="alert" className="h-4 w-4" />
+                      <AlertDescription className="text-red-400 text-sm">{error}</AlertDescription>
+                    </Alert>
+                  )}
 
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label className="text-gray-400 text-sm">
-                      Search & Select Artist from Spotify *
-                    </Label>
-                    <ArtistSearch
-                      placeholder="Type artist name to search Spotify..."
-                      onArtistSelect={(artist: ArtistSearchResult) => {
-                        setSelectedSpotifyArtist(artist)
-                        setArtistName(artist.name)
-                        setArtistImage(artist.image || "")
-                        setSpotifyUrl(artist.spotifyUrl || "")
-                        // Extract genre from artist info if available
-                        if (artist.genres && artist.genres.length > 0) {
-                          setArtistGenre(artist.genres.join(", "))
-                        }
-                      }}
-                    />
-                    {selectedSpotifyArtist && (
-                      <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
-                        {selectedSpotifyArtist.image && (
-                          <Image 
-                            src={selectedSpotifyArtist.image} 
-                            alt={selectedSpotifyArtist.name}
-                            className="w-12 h-12 rounded-full object-cover"
-                            width={48}
-                            height={48}
-                          />
-                        )}
-                        <div>
-                          <p className="text-white font-medium">{selectedSpotifyArtist.name}</p>
-                          <p className="text-gray-400 text-sm">From Spotify</p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-400 text-sm">
+                        Search & Select Artist from Spotify *
+                      </Label>
+                      <ArtistSearch
+                        placeholder="Type artist name to search Spotify..."
+                        onArtistSelect={(artist: ArtistSearchResult) => {
+                          setSelectedSpotifyArtist(artist)
+                          setArtistName(artist.name)
+                          setArtistImage(artist.image || "")
+                          setSpotifyUrl(artist.spotifyUrl || "")
+                          if (artist.genres && artist.genres.length > 0) {
+                            setArtistGenre(artist.genres.join(", "))
+                          }
+                        }}
+                      />
+                      {selectedSpotifyArtist && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                          {selectedSpotifyArtist.image && (
+                            <Image 
+                              src={selectedSpotifyArtist.image} 
+                              alt={selectedSpotifyArtist.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                              width={48}
+                              height={48}
+                            />
+                          )}
+                          <div>
+                            <p className="text-white font-medium text-sm">{selectedSpotifyArtist.name}</p>
+                            <p className="text-gray-400 text-xs">From Spotify</p>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-gray-400 text-sm">
-                      Name *
-                    </Label>
-                    <Input
-                      id="name"
-                      value={artistName}
-                      onChange={(e) => setArtistName(e.target.value)}
-                      className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500"
-                      placeholder="e.g. DJ Quantum"
-                      required
-                      disabled={!!selectedSpotifyArtist}
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-gray-400 text-sm">
+                        Name *
+                      </Label>
+                      <Input
+                        id="name"
+                        value={artistName}
+                        onChange={(e) => setArtistName(e.target.value)}
+                        className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500 text-sm"
+                        placeholder="e.g. DJ Quantum"
+                        required
+                        disabled={!!selectedSpotifyArtist}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="genre" className="text-gray-400 text-sm">
-                      Genre
-                    </Label>
-                    <Input
-                      id="genre"
-                      value={artistGenre}
-                      onChange={(e) => setArtistGenre(e.target.value)}
-                      className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500"
-                      placeholder="e.g. Electronic, Hip Hop"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="genre" className="text-gray-400 text-sm">
+                        Genre
+                      </Label>
+                      <Input
+                        id="genre"
+                        value={artistGenre}
+                        onChange={(e) => setArtistGenre(e.target.value)}
+                        className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500 text-sm"
+                        placeholder="e.g. Electronic, Hip Hop"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="location" className="text-gray-400 text-sm">
-                      Location
-                    </Label>
-                    <Input
-                      id="location"
-                      value={artistLocation}
-                      onChange={(e) => setArtistLocation(e.target.value)}
-                      className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500"
-                      placeholder="e.g. Los Angeles, CA"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location" className="text-gray-400 text-sm">
+                        Location
+                      </Label>
+                      <Input
+                        id="location"
+                        value={artistLocation}
+                        onChange={(e) => setArtistLocation(e.target.value)}
+                        className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500 text-sm"
+                        placeholder="e.g. Los Angeles, CA"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bio" className="text-gray-400 text-sm">
-                      Bio
-                    </Label>
-                    <Textarea
-                      id="bio"
-                      value={artistBio}
-                      onChange={(e) => setArtistBio(e.target.value)}
-                      className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500 min-h-[80px]"
-                      placeholder="Tell us about this artist..."
-                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="bio" className="text-gray-400 text-sm">
+                        Bio
+                      </Label>
+                      <Textarea
+                        id="bio"
+                        value={artistBio}
+                        onChange={(e) => setArtistBio(e.target.value)}
+                        className="w-full bg-gray-800 border-gray-600 focus:ring-gray-500 min-h-[80px] text-sm"
+                        placeholder="Tell us about this artist..."
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <DialogFooter className="sticky bottom-0 bg-gray-900 pt-4 border-t border-gray-700 mt-4">
-                  <Button type="button" variant="secondary" onClick={() => setIsDialogOpen(false)} disabled={saving} className="w-full sm:w-auto">
+                <DialogFooter className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-800 flex-row gap-2">
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => setIsDialogOpen(false)} 
+                    disabled={saving} 
+                    className="flex-1 text-sm"
+                  >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     onClick={handleSaveArtist}
-                    className="button-primary w-full sm:w-auto"
+                    className="button-primary flex-1 text-sm"
                     disabled={saving || !artistName.trim() || !selectedSpotifyArtist}
                   >
                     {saving ? "Saving..." : "Save Artist"}
