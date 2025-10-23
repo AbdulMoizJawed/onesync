@@ -71,6 +71,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import AdminBeatUpload from "@/components/beats/AdminBeatUpload";
 import AdminBeatManagement from "@/components/beats/AdminBeatManagement";
+import ImprovedAdminNav from "@/components/ImprovedAdminNav";
 
 interface AdminStats {
   totalUsers: number;
@@ -449,10 +450,8 @@ export default function AdminDashboard() {
         await sendUserNotification(
           userId,
           "Account Suspended",
-          `Your account has been ${
-            suspensionType === "permanent" ? "permanently" : "temporarily"
-          } suspended. Reason: ${reason}${
-            suspensionType === "temporary" ? " (30 days)" : ""
+          `Your account has been ${suspensionType === "permanent" ? "permanently" : "temporarily"
+          } suspended. Reason: ${reason}${suspensionType === "temporary" ? " (30 days)" : ""
           }`,
           "warning"
         );
@@ -1007,8 +1006,7 @@ export default function AdminDashboard() {
         await sendUserNotification(
           edit.user_id,
           "Release Edit Rejected",
-          `Your edit request for "${edit.releases.title}" has been rejected. ${
-            reason ? `Reason: ${reason}` : "Please review and try again."
+          `Your edit request for "${edit.releases.title}" has been rejected. ${reason ? `Reason: ${reason}` : "Please review and try again."
           }`,
           "warning"
         );
@@ -1119,9 +1117,8 @@ export default function AdminDashboard() {
           `Release ${action === "approve" ? "Approved" : "Rejected"}`,
           action === "approve"
             ? `Your release "${release.title}" has been approved and is now live!`
-            : `Your release "${release.title}" has been rejected. ${
-                reason ? `Reason: ${reason}` : "Please review and resubmit."
-              }`,
+            : `Your release "${release.title}" has been rejected. ${reason ? `Reason: ${reason}` : "Please review and resubmit."
+            }`,
           action === "approve" ? "release" : "warning"
         );
         console.log("✅ Notification sent");
@@ -1131,8 +1128,7 @@ export default function AdminDashboard() {
 
       // 🎉 SUCCESS TOAST
       toast.success(
-        `Release ${
-          action === "approve" ? "approved" : "rejected"
+        `Release ${action === "approve" ? "approved" : "rejected"
         } successfully!`,
         {
           description: `"${release.title}" status changed to ${newStatus}`,
@@ -1193,9 +1189,8 @@ export default function AdminDashboard() {
           `Payout Request ${status === "approved" ? "Approved" : "Rejected"}`,
           status === "approved"
             ? `Your payout request of $${payout.amount} has been approved and will be processed soon.`
-            : `Your payout request of $${payout.amount} has been rejected. ${
-                notes ? `Reason: ${notes}` : ""
-              }`,
+            : `Your payout request of $${payout.amount} has been rejected. ${notes ? `Reason: ${notes}` : ""
+            }`,
           status === "approved" ? "payout" : "warning"
         );
 
@@ -1269,9 +1264,9 @@ export default function AdminDashboard() {
         [
           "Cover Art URL",
           release.cover_art ||
-            release.cover_art_url ||
-            release.artwork_url ||
-            "N/A",
+          release.cover_art_url ||
+          release.artwork_url ||
+          "N/A",
         ],
         ["Audio URL", release.audio_url || "N/A"],
         ["Platforms", release.platforms?.join(", ") || "N/A"],
@@ -1574,16 +1569,14 @@ export default function AdminDashboard() {
         if (request) {
           await sendUserNotification(
             request.user_id,
-            `Publishing Request ${
-              action === "approve" ? "Approved" : "Rejected"
+            `Publishing Request ${action === "approve" ? "Approved" : "Rejected"
             }`,
             action === "approve"
               ? `Your publishing administration request has been approved! You now have access to publishing services.`
-              : `Your publishing administration request has been rejected. ${
-                  adminNotes
-                    ? `Reason: ${adminNotes}`
-                    : "Please contact support for more information."
-                }`,
+              : `Your publishing administration request has been rejected. ${adminNotes
+                ? `Reason: ${adminNotes}`
+                : "Please contact support for more information."
+              }`,
             action === "approve" ? "system" : "warning"
           );
         }
@@ -1604,351 +1597,220 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950">
-      {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Shield className="w-8 h-8 text-blue-400 mr-3" />
-              <h1 className="text-xl font-bold text-white">Admin Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge
-                variant="outline"
-                className="text-green-400 border-green-400"
-              >
-                {user.email}
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push("/")}
-                className="border-gray-600 text-gray-300 hover:bg-gray-800"
-              >
-                Back to App
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+ 
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-8">
-        {/* Stats Overview - Condensed for Mobile */}
-        <div className="mb-4 sm:mb-6">
-          <h2 className="text-white text-base sm:text-lg font-semibold mb-2 sm:mb-3 px-2 sm:px-0">
-            Quick Stats
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Total Users
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.totalUsers || 0}
-                    </p>
-                  </div>
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Total Releases
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.totalReleases || 0}
-                    </p>
-                  </div>
-                  <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-green-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Pending Releases
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.pendingReleases || 0}
-                    </p>
-                  </div>
-                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-orange-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Payout Requests
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.payoutRequests || 0}
-                    </p>
-                  </div>
-                  <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Support Tickets
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.supportTickets || 0}
-                    </p>
-                  </div>
-                  <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Publishing Requests
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.publishingRequests || 0}
-                    </p>
-                  </div>
-                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Row 2 Cards */}
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Playlist Campaigns
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.playlistCampaigns || 0}
-                    </p>
-                  </div>
-                  <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-pink-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Beats Pending
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.beatsPendingApproval || 0}
-                    </p>
-                  </div>
-                  <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-cyan-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Mastering Jobs
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.activeMasteringJobs || 0}
-                    </p>
-                  </div>
-                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Forum Flags
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      {stats?.forumFlags || 0}
-                    </p>
-                  </div>
-                  <Flag className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-red-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      AI Service Cost
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      ${(stats?.aiServiceCost || 0).toFixed(2)}
-                    </p>
-                  </div>
-                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gray-900 border-gray-800">
-              <CardContent className="p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
-                      Platform Revenue
-                    </p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-                      ${(stats?.platformRevenue || 0).toFixed(0)}
-                    </p>
-                  </div>
-                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-emerald-400 flex-shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-4 sm:space-y-6"
+  
+        <ImprovedAdminNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          stats={stats}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          user={user}
         >
-          <div className="overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
-            <TabsList className="bg-gray-900 border-gray-800 inline-flex w-auto min-w-full gap-1 sm:gap-2 p-1">
-              <TabsTrigger
-                value="overview"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Overview</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="releases"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Releases</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="users"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Users</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="payouts"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Payouts</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="takedowns"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Takedowns</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="edits"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Edits</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="support"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Support</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="publishing"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Publishing</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="campaigns"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Campaigns</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="upload"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Upload New Beat
-              </TabsTrigger>
-              <TabsTrigger
-                value="manage"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-              >
-                <Music className="w-4 h-4 mr-2" />
-                Manage Beats
-              </TabsTrigger>
-              <TabsTrigger
-                value="mastering"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Mastering</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="forum-mod"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <Flag className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Forum</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="financial"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Financial</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="notifications"
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white whitespace-nowrap text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2"
-              >
-                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Notify</span>
-              </TabsTrigger>
-            </TabsList>
+          {/* Stats Overview - Condensed for Mobile */}
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-white text-base sm:text-lg font-semibold mb-2 sm:mb-3 px-2 sm:px-0">
+              Quick Stats
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Total Users
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.totalUsers || 0}
+                      </p>
+                    </div>
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Total Releases
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.totalReleases || 0}
+                      </p>
+                    </div>
+                    <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-green-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Pending Releases
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.pendingReleases || 0}
+                      </p>
+                    </div>
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-orange-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Payout Requests
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.payoutRequests || 0}
+                      </p>
+                    </div>
+                    <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Support Tickets
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.supportTickets || 0}
+                      </p>
+                    </div>
+                    <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-blue-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Publishing Requests
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.publishingRequests || 0}
+                      </p>
+                    </div>
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Row 2 Cards */}
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Playlist Campaigns
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.playlistCampaigns || 0}
+                      </p>
+                    </div>
+                    <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-pink-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Beats Pending
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.beatsPendingApproval || 0}
+                      </p>
+                    </div>
+                    <Music className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-cyan-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Mastering Jobs
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.activeMasteringJobs || 0}
+                      </p>
+                    </div>
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Forum Flags
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        {stats?.forumFlags || 0}
+                      </p>
+                    </div>
+                    <Flag className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-red-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        AI Service Cost
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        ${(stats?.aiServiceCost || 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-gray-400 text-[10px] sm:text-xs lg:text-sm truncate">
+                        Platform Revenue
+                      </p>
+                      <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                        ${(stats?.platformRevenue || 0).toFixed(0)}
+                      </p>
+                    </div>
+                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-emerald-400 flex-shrink-0" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
+
+          {/* Main Content */}
+
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -2165,21 +2027,21 @@ export default function AdminDashboard() {
                                 <Badge
                                   variant={
                                     release.status === "approved" ||
-                                    release.status === "live"
+                                      release.status === "live"
                                       ? "default"
                                       : release.status === "rejected"
-                                      ? "destructive"
-                                      : "secondary"
+                                        ? "destructive"
+                                        : "secondary"
                                   }
                                   className={
                                     release.status === "live" ||
-                                    release.status === "approved"
+                                      release.status === "approved"
                                       ? "bg-green-600"
                                       : release.status === "pending"
-                                      ? "bg-yellow-600"
-                                      : release.status === "processing"
-                                      ? "bg-blue-600"
-                                      : "bg-red-600"
+                                        ? "bg-yellow-600"
+                                        : release.status === "processing"
+                                          ? "bg-blue-600"
+                                          : "bg-red-600"
                                   }
                                 >
                                   {release.status}
@@ -2271,8 +2133,8 @@ export default function AdminDashboard() {
                                     <span className="text-white">
                                       {release.release_date
                                         ? new Date(
-                                            release.release_date
-                                          ).toLocaleDateString()
+                                          release.release_date
+                                        ).toLocaleDateString()
                                         : "Not set"}
                                     </span>
                                   </p>
@@ -2379,7 +2241,7 @@ export default function AdminDashboard() {
                                       Cover Art:
                                     </span>
                                     {release.cover_art_url ||
-                                    release.artwork_url ? (
+                                      release.artwork_url ? (
                                       <a
                                         href={
                                           release.cover_art_url ||
@@ -2459,12 +2321,12 @@ export default function AdminDashboard() {
                                               </span>
                                               <span className="text-white ml-2">
                                                 {typeof value === "object" &&
-                                                value !== null
+                                                  value !== null
                                                   ? Array.isArray(value)
                                                     ? value.join(", ")
                                                     : Object.values(value).join(
-                                                        ", "
-                                                      )
+                                                      ", "
+                                                    )
                                                   : String(value)}
                                               </span>
                                             </div>
@@ -2550,8 +2412,8 @@ export default function AdminDashboard() {
                                     user.status === "active"
                                       ? "text-green-400 border-green-400"
                                       : user.status === "suspended"
-                                      ? "text-red-400 border-red-400"
-                                      : "text-yellow-400 border-yellow-400"
+                                        ? "text-red-400 border-red-400"
+                                        : "text-yellow-400 border-yellow-400"
                                   }
                                 >
                                   {user.status || "Active"}
@@ -2689,8 +2551,8 @@ export default function AdminDashboard() {
                                     <span className="text-white">
                                       {user.last_sign_in_at
                                         ? new Date(
-                                            user.last_sign_in_at
-                                          ).toLocaleDateString()
+                                          user.last_sign_in_at
+                                        ).toLocaleDateString()
                                         : "Never"}
                                     </span>
                                   </p>
@@ -2774,12 +2636,12 @@ export default function AdminDashboard() {
                                               </span>
                                               <span className="text-white ml-2">
                                                 {typeof value === "object" &&
-                                                value !== null
+                                                  value !== null
                                                   ? Array.isArray(value)
                                                     ? value.join(", ")
                                                     : Object.values(value).join(
-                                                        ", "
-                                                      )
+                                                      ", "
+                                                    )
                                                   : String(value)}
                                               </span>
                                             </div>
@@ -2840,21 +2702,21 @@ export default function AdminDashboard() {
                                 <Badge
                                   variant={
                                     payout.status === "approved" ||
-                                    payout.status === "completed"
+                                      payout.status === "completed"
                                       ? "default"
                                       : payout.status === "rejected"
-                                      ? "destructive"
-                                      : "secondary"
+                                        ? "destructive"
+                                        : "secondary"
                                   }
                                   className={
                                     payout.status === "approved" ||
-                                    payout.status === "completed"
+                                      payout.status === "completed"
                                       ? "bg-green-600"
                                       : payout.status === "pending"
-                                      ? "bg-yellow-600"
-                                      : payout.status === "processing"
-                                      ? "bg-blue-600"
-                                      : "bg-red-600"
+                                        ? "bg-yellow-600"
+                                        : payout.status === "processing"
+                                          ? "bg-blue-600"
+                                          : "bg-red-600"
                                   }
                                 >
                                   {payout.status}
@@ -3276,15 +3138,15 @@ export default function AdminDashboard() {
                                       edit.status === "approved"
                                         ? "default"
                                         : edit.status === "rejected"
-                                        ? "destructive"
-                                        : "secondary"
+                                          ? "destructive"
+                                          : "secondary"
                                     }
                                     className={
                                       edit.status === "approved"
                                         ? "bg-green-600"
                                         : edit.status === "pending"
-                                        ? "bg-yellow-600"
-                                        : "bg-red-600"
+                                          ? "bg-yellow-600"
+                                          : "bg-red-600"
                                     }
                                   >
                                     {edit.status}
@@ -3538,15 +3400,15 @@ export default function AdminDashboard() {
                                   request.status === "approved"
                                     ? "default"
                                     : request.status === "rejected"
-                                    ? "destructive"
-                                    : "secondary"
+                                      ? "destructive"
+                                      : "secondary"
                                 }
                                 className={
                                   request.status === "approved"
                                     ? "bg-green-600 text-white"
                                     : request.status === "rejected"
-                                    ? "bg-red-600 text-white"
-                                    : "bg-yellow-600 text-white"
+                                      ? "bg-red-600 text-white"
+                                      : "bg-yellow-600 text-white"
                                 }
                               >
                                 {request.status.charAt(0).toUpperCase() +
@@ -3630,11 +3492,11 @@ export default function AdminDashboard() {
                     (request) =>
                       statusFilter === "all" || request.status === statusFilter
                   ).length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No publishing requests found</p>
-                    </div>
-                  )}
+                      <div className="text-center py-8 text-gray-400">
+                        <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No publishing requests found</p>
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -3722,17 +3584,17 @@ export default function AdminDashboard() {
                                       ticket.status === "resolved"
                                         ? "default"
                                         : ticket.status === "closed"
-                                        ? "secondary"
-                                        : "outline"
+                                          ? "secondary"
+                                          : "outline"
                                     }
                                     className={
                                       ticket.status === "resolved"
                                         ? "bg-green-600"
                                         : ticket.status === "open"
-                                        ? "bg-red-600"
-                                        : ticket.status === "in_progress"
-                                        ? "bg-yellow-600"
-                                        : "bg-gray-600"
+                                          ? "bg-red-600"
+                                          : ticket.status === "in_progress"
+                                            ? "bg-yellow-600"
+                                            : "bg-gray-600"
                                     }
                                   >
                                     {ticket.status.replace("_", " ")}
@@ -3743,8 +3605,8 @@ export default function AdminDashboard() {
                                       ticket.priority === "high"
                                         ? "text-red-400 border-red-400"
                                         : ticket.priority === "medium"
-                                        ? "text-yellow-400 border-yellow-400"
-                                        : "text-green-400 border-green-400"
+                                          ? "text-yellow-400 border-yellow-400"
+                                          : "text-green-400 border-green-400"
                                     }
                                   >
                                     {ticket.priority} priority
@@ -3993,10 +3855,10 @@ export default function AdminDashboard() {
                                 campaign.status === "completed"
                                   ? "bg-green-600"
                                   : campaign.status === "in_progress"
-                                  ? "bg-blue-600"
-                                  : campaign.status === "cancelled"
-                                  ? "bg-gray-600"
-                                  : "bg-yellow-600"
+                                    ? "bg-blue-600"
+                                    : campaign.status === "cancelled"
+                                      ? "bg-gray-600"
+                                      : "bg-yellow-600"
                               }
                             >
                               {campaign.status}
@@ -4107,102 +3969,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Beat Marketplace Tab */}
-          {/* <TabsContent value="beats" className="space-y-6">
-            <Card className="bg-gray-900 border-gray-800">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white flex items-center">
-                    <Music className="w-5 h-5 mr-2 text-cyan-400" />
-                    Beat Marketplace ({beats.length})
-                  </CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchBeats}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {beats.filter(beat => statusFilter === 'all' || beat.approval_status === statusFilter).map((beat) => (
-                    <div key={beat.id} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <span className="text-white font-medium">{beat.title}</span>
-                            <Badge className={
-                              beat.approval_status === 'approved' ? 'bg-green-600' :
-                              beat.approval_status === 'rejected' ? 'bg-red-600' :
-                              'bg-yellow-600'
-                            }>
-                              {beat.approval_status}
-                            </Badge>
-                          </div>
-                          <div className="text-gray-300 text-sm space-y-1">
-                            <div>Producer: {beat.profiles?.full_name}</div>
-                            <div>Genre: {beat.genre} • BPM: {beat.bpm}</div>
-                            <div>Created: {new Date(beat.created_at).toLocaleDateString()}</div>
-                          </div>
-                          {beat.admin_notes && (
-                            <div className="mt-3 p-3 bg-gray-900 rounded">
-                              <p className="text-gray-400 text-xs">Admin Notes: {beat.admin_notes}</p>
-                            </div>
-                          )}
-                        </div>
-                        {beat.approval_status === 'pending' && (
-                          <div className="flex space-x-2 ml-4">
-                            <Button
-                              size="sm"
-                              onClick={async () => {
-                                await fetch('/api/admin/beats', {
-                                  method: 'PATCH',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ id: beat.id, action: 'approve' })
-                                })
-                                toast.success('Beat approved')
-                                fetchBeats()
-                              }}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={async () => {
-                                const notes = prompt('Reason for rejection:')
-                                await fetch('/api/admin/beats', {
-                                  method: 'PATCH',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ id: beat.id, action: 'reject', admin_notes: notes })
-                                })
-                                toast.success('Beat rejected')
-                                fetchBeats()
-                              }}
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {beats.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No beats found</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent> */}
+
           <TabsContent value="upload" className="mt-6">
             <AdminBeatUpload onUploadComplete={handleUploadComplete} />
           </TabsContent>
@@ -4248,10 +4015,10 @@ export default function AdminDashboard() {
                                 job.status === "completed"
                                   ? "bg-green-600"
                                   : job.status === "processing"
-                                  ? "bg-blue-600"
-                                  : job.status === "failed"
-                                  ? "bg-red-600"
-                                  : "bg-yellow-600"
+                                    ? "bg-blue-600"
+                                    : job.status === "failed"
+                                      ? "bg-red-600"
+                                      : "bg-yellow-600"
                               }
                             >
                               {job.status}
@@ -4371,8 +4138,8 @@ export default function AdminDashboard() {
                                 flag.status === "actioned"
                                   ? "bg-green-600"
                                   : flag.status === "dismissed"
-                                  ? "bg-gray-600"
-                                  : "bg-yellow-600"
+                                    ? "bg-gray-600"
+                                    : "bg-yellow-600"
                               }
                             >
                               {flag.status}
@@ -4698,8 +4465,8 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      </div>
+        </ImprovedAdminNav>
+       
 
       {/* Rejection Reason Modal */}
       <Dialog

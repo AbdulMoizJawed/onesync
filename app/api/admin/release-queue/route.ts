@@ -1,3 +1,6 @@
+// app/api/admin/release-queue/route.ts
+// Updated with sorting logic
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -34,9 +37,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Sort releases: pending first, then by priority
+    const sortedReleases = (releases || []).sort((a, b) => {
+      // Define status priority (lower number = higher priority)
+      const statusPriority: { [key: string]: number } = {
+        'pending': 0,      // Highest priority - needs review
+        'processing': 1,   // Being worked on
+        'draft': 1,        // Draft state
+        'approved': 2,     // Already approved
+        'live': 2,         // Already live
+        'rejected': 3      // Lowest priority
+      }
+      
+      const priorityA = statusPriority[a.status] ?? 4
+      const priorityB = statusPriority[b.status] ?? 4
+      
+      // Sort by status priority first
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB
+      }
+      
+      // Within same status, sort by created date (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+
+    console.log('✅ Fetched and sorted releases:', {
+      total: sortedReleases.length,
+      pending: sortedReleases.filter(r => r.status === 'pending').length,
+      approved: sortedReleases.filter(r => r.status === 'approved' || r.status === 'live').length,
+      rejected: sortedReleases.filter(r => r.status === 'rejected').length
+    })
+
     return NextResponse.json({
-      data: releases || [],
-      count: releases?.length || 0
+      data: sortedReleases,
+      count: sortedReleases.length
     })
   } catch (error) {
     console.error('❌ GET error:', error)
@@ -52,13 +86,9 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { id, action, reason } = body
     
-    console.log('📥 PATCH:', { id, action, reason })
-
-    console.log(action, "action in backend ")
-    console.log(reason, "action in reason ")
-
+    console.log('📥 PATCH request:', { id, action, reason })
     
-    // Validate
+    // Validate required fields
     if (!id || !action) {
       return NextResponse.json(
         { error: 'Missing id or action' },
@@ -68,48 +98,54 @@ export async function PATCH(request: NextRequest) {
 
     if (!['approve', 'reject'].includes(action)) {
       return NextResponse.json(
-        { error: 'Invalid action' },
+        { error: 'Invalid action. Must be "approve" or "reject"' },
         { status: 400 }
       )
     }
 
     const supabase = getSupabaseAdmin()
 
-    // Check exists
-    console.log('🔍 Checking release:', id)
+    // Check if release exists
+    console.log('🔍 Checking if release exists:', id)
     const { data: existing, error: fetchError } = await supabase
       .from('releases')
-      .select('id, title, status')
+      .select('id, title, status, user_id')
       .eq('id', id)
       .limit(1)
 
     if (fetchError || !existing || existing.length === 0) {
-      console.error('❌ Not found')
+      console.error('❌ Release not found:', fetchError)
       return NextResponse.json(
         { error: 'Release not found' },
         { status: 404 }
       )
     }
 
-    console.log('✅ Found:', existing[0].title)
+    console.log('✅ Found release:', existing[0].title, '| Current status:', existing[0].status)
 
-    // Build update
+    // Build update object
     const newStatus = action === 'approve' ? 'approved' : 'rejected'
     const updateData: any = {
       status: newStatus,
       updated_at: new Date().toISOString()
     }
 
+    // Add action-specific fields
     if (action === 'approve') {
       updateData.approved_at = new Date().toISOString()
-    } else if (reason) {
-      updateData.admin_notes = reason
-      updateData.rejection_reason = reason
+      console.log('✅ Approving release')
+    } else if (action === 'reject') {
+      if (reason) {
+        updateData.admin_notes = reason
+        updateData.rejection_reason = reason
+      }
+      updateData.rejected_at = new Date().toISOString()
+      console.log('⛔ Rejecting release with reason:', reason || 'No reason provided')
     }
 
-    console.log('📝 Updating:', updateData)
+    console.log('📝 Update data:', updateData)
 
-    // Update
+    // Perform update
     const { data: updated, error: updateError } = await supabase
       .from('releases')
       .update(updateData)
@@ -125,14 +161,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (!updated || updated.length === 0) {
-      console.error('❌ No data returned')
+      console.error('❌ Update returned no data')
       return NextResponse.json(
         { error: 'Update returned no data' },
         { status: 500 }
       )
     }
 
-    console.log('✅ Updated to:', updated[0].status)
+    console.log('✅ Successfully updated release to status:', updated[0].status)
+
+    // Optional: Send notification to user (you can implement this)
+    // await sendNotificationToUser(existing[0].user_id, action, updated[0])
 
     return NextResponse.json({
       success: true,
@@ -143,7 +182,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ PATCH error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }
