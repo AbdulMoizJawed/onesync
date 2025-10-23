@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input"
 import { ReleaseImage } from "@/components/optimized-image"
 import { animations } from "@/lib/animations"
 import { toast } from "sonner"
-import { ShieldAlert, AlertCircle } from "lucide-react"
+import { ShieldAlert, AlertCircle, Grid, List as ListIcon } from "lucide-react"
 import { SecureReleaseDelete } from "@/components/secure-release-delete"
 import Link from "next/link"
 
@@ -80,6 +80,7 @@ function ReleasesContent() {
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null)
   const [audioLoading, setAudioLoading] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
 
   // Filter releases based on search term
   useEffect(() => {
@@ -130,7 +131,6 @@ function ReleasesContent() {
       }
     }
 
-    // Add visibility change listener
     document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
@@ -144,12 +144,9 @@ function ReleasesContent() {
   }, [audioRef])
 
   const handleDeleteRelease = async (releaseId: string) => {
-    // This function is now deprecated - use SecureReleaseDelete component instead
     console.warn('Direct delete operation blocked for security. Use SecureReleaseDelete component.')
     return
   }
-
-
 
   const getStatusBadge = (status: string | null) => {
     const statusConfig = {
@@ -221,8 +218,6 @@ function ReleasesContent() {
 
       try {
         const audio = new Audio()
-        // Remove crossOrigin to avoid CORS issues with most audio hosting services
-        // audio.crossOrigin = "anonymous"
 
         audio.oncanplay = () => {
           setAudioLoading(null)
@@ -246,7 +241,6 @@ function ReleasesContent() {
           setCurrentlyPlaying(null)
           setAudioRef(null)
           setAudioLoading(null)
-          // Show user-friendly error message
           toast.error("Playback failed - audio file may be corrupted or unavailable")
         }
 
@@ -266,7 +260,6 @@ function ReleasesContent() {
               setAudioRef(null)
               setAudioLoading(null)
               
-              // More detailed error handling with user-friendly messages
               if (error.name === 'NotAllowedError') {
                 toast.error("Playback blocked - please interact with the page first")
               } else if (error.name === 'NotSupportedError') {
@@ -310,12 +303,39 @@ function ReleasesContent() {
                       className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-gray-500 w-full sm:w-64"
                     />
                   </div>
+                  
+                  {/* View Mode Toggle - Hidden on Mobile */}
+                  <div className="hidden md:flex gap-2">
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      size="icon"
+                      onClick={() => {
+                        triggerHaptic("light")
+                        setViewMode('grid')
+                      }}
+                      className={`cursor-pointer ${viewMode === 'grid' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                    >
+                      <Grid className="w-4 h-4 cursor-pointer" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'outline'}
+                      size="icon"
+                      onClick={() => {
+                        triggerHaptic("light")
+                        setViewMode('list')
+                      }}
+                      className={`cursor-pointer ${viewMode === 'list' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                    >
+                      <ListIcon className="w-4 h-4 cursor-pointer" />
+                    </Button>
+                  </div>
+
                   <Button
                     onClick={() => {
                       triggerHaptic("light")
                       router.push("/upload")
                     }}
-                    className="button-primary group w-full sm:w-auto"
+                    className="button-primary group w-full sm:w-auto cursor-pointer"
                   >
                     <IconComponent name="addCircle" className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:rotate-90" />
                     New Release
@@ -358,251 +378,360 @@ function ReleasesContent() {
                 </div>
               </div>
 
-              {/* Releases Table */}
-              <div className="table-dark animate-fade-in-scale">
-                {/* Mobile Card View */}
-                <div className="block md:hidden space-y-3">
-                  {loading ? (
-                    <div className="text-center py-16">
-                      <CustomLoader size="lg" text="Loading your releases..." showText={true} />
-                    </div>
-                  ) : filteredReleases.length > 0 ? (
-                    filteredReleases.map((release, index) => (
-                      <div
-                        key={release.id}
-                        className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 hover:bg-gray-900 transition-all duration-200 cursor-pointer"
-                        onClick={() => router.push(`/releases/${release.id}`)}
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0">
-                            <ReleaseImage
-                              src={release.cover_art_url}
-                              alt={release.title}
-                              size="sm"
-                              className="w-16 h-16 rounded-lg"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-medium text-white truncate">{release.title}</h3>
-                                <p className="text-sm text-gray-400 truncate">{release.artist_name}</p>
-                              </div>
-                              {getStatusBadge(release.status)}
-                            </div>
-                            <div className="flex items-center gap-4 text-sm">
-                              <div>
-                                <p className="text-gray-500">Streams</p>
-                                <p className="text-white font-semibold">{formatNumber(release.streams)}</p>
-                              </div>
-                              <div>
-                                <p className="text-gray-500">Revenue</p>
-                                <p className="text-white font-semibold">${release.revenue?.toFixed(2) || '0.00'}</p>
-                              </div>
-                              <div className="ml-auto">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="w-10 h-10"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handlePlayPause(release.id, release.audio_url)
-                                  }}
-                                  disabled={!release.audio_url || audioLoading === release.id}
-                                >
-                                  {audioLoading === release.id ? (
-                                    <IconComponent name="volume" className="w-4 h-4 text-amber-400 animate-pulse" />
-                                  ) : currentlyPlaying === release.id ? (
-                                    <IconComponent name="pause" className="w-4 h-4 text-slate-400" />
-                                  ) : (
-                                    <IconComponent name="play" className="w-4 h-4 text-gray-400" />
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
+              {/* Releases Content */}
+              <div className="animate-fade-in-scale">
+                {loading ? (
+                  <div className="text-center py-16">
+                    <CustomLoader size="lg" text="Loading your releases..." showText={true} />
+                  </div>
+                ) : filteredReleases.length === 0 ? (
+                  <div className="table-dark">
+                    <div className="text-center py-20">
+                      <div className="flex flex-col items-center space-y-6 animate-fade-in-scale">
+                        <div className="w-20 h-20 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-full flex items-center justify-center">
+                          <IconComponent name="music" className="w-10 h-10 text-gray-400" />
                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-16 text-gray-400">
-                      <p className="mb-4">No releases found</p>
-                      <Button asChild>
-                        <Link href="/upload">Upload Your First Release</Link>
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-800 hover:bg-gray-900/50">
-                      <TableHead className="table-header">Cover</TableHead>
-                      <TableHead className="table-header w-[60px]">Preview</TableHead>
-                      <TableHead className="table-header">Title</TableHead>
-                      <TableHead className="table-header">Artist</TableHead>
-                      <TableHead className="table-header">Status</TableHead>
-                      <TableHead className="table-header text-right">Streams</TableHead>
-                      <TableHead className="table-header text-right">Revenue</TableHead>
-                      <TableHead className="table-header text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-16">
-                          <CustomLoader size="lg" text="Loading your releases..." showText={true} />
-                        </TableCell>
-                      </TableRow>
-                    ) : releases.length > 0 ? (
-                      filteredReleases.map((release, index) => (
-                        <TableRow
-                          key={release.id}
-                          className="table-row stagger-item hover-lift cursor-pointer"
-                          style={{ animationDelay: `${index * 0.1}s` }}
-                          onClick={(e) => {
-                            // Don't navigate if clicking on action buttons
-                            if ((e.target as HTMLElement).closest('.dropdown-menu-trigger, button')) {
-                              return
-                            }
-                            router.push(`/releases/${release.id}`)
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-semibold text-white">No releases found</h3>
+                          <p className="text-gray-500">Get started by uploading your first track.</p>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            triggerHaptic("medium")
+                            router.push("/upload")
                           }}
+                          className="button-primary group cursor-pointer"
                         >
-                          <TableCell className="table-cell">
-                            <div className="relative group">
+                          <IconComponent name="addCircle" className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
+                          Upload Release
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Mobile Card View - Always shown on mobile */}
+                    <div className="block md:hidden space-y-3">
+                      {filteredReleases.map((release, index) => (
+                        <div
+                          key={release.id}
+                          className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 hover:bg-gray-900 transition-all duration-200 cursor-pointer"
+                          onClick={() => router.push(`/releases/${release.id}`)}
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <div className="flex gap-4">
+                            <div className="flex-shrink-0">
                               <ReleaseImage
                                 src={release.cover_art_url}
                                 alt={release.title}
                                 size="sm"
-                                className="w-12 h-12 rounded-lg transition-transform duration-300 group-hover:scale-110"
+                                className="w-16 h-16 rounded-lg"
                               />
-                              <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                <IconComponent name="view" className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="font-medium text-white truncate">{release.title}</h3>
+                                  <p className="text-sm text-gray-400 truncate">{release.artist_name}</p>
+                                </div>
+                                {getStatusBadge(release.status)}
+                              </div>
+                              <div className="flex items-center gap-4 text-sm">
+                                <div>
+                                  <p className="text-gray-500">Streams</p>
+                                  <p className="text-white font-semibold">{formatNumber(release.streams)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-500">Revenue</p>
+                                  <p className="text-white font-semibold">${release.revenue?.toFixed(2) || '0.00'}</p>
+                                </div>
+                                <div className="ml-auto">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-10 h-10 cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handlePlayPause(release.id, release.audio_url)
+                                    }}
+                                    disabled={!release.audio_url || audioLoading === release.id}
+                                  >
+                                    {audioLoading === release.id ? (
+                                      <IconComponent name="volume" className="w-4 h-4 text-amber-400 animate-pulse" />
+                                    ) : currentlyPlaying === release.id ? (
+                                      <IconComponent name="pause" className="w-4 h-4 text-slate-400" />
+                                    ) : (
+                                      <IconComponent name="play" className="w-4 h-4 text-gray-400" />
+                                    )}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="table-cell">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="w-10 h-10 hover:bg-gray-800/50 transition-all duration-300 transform hover:scale-110 active:scale-95 relative overflow-hidden group"
-                              onClick={() => handlePlayPause(release.id, release.audio_url)}
-                              disabled={!release.audio_url || audioLoading === release.id}
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-r from-gray-800/10 to-gray-700/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                              {audioLoading === release.id ? (
-                                <IconComponent name="volume" className="w-4 h-4 text-amber-400 animate-pulse relative z-10" />
-                              ) : currentlyPlaying === release.id ? (
-                                <IconComponent name="pause" className="w-4 h-4 text-slate-400 relative z-10" />
-                              ) : (
-                                <IconComponent name="play" className="w-4 h-4 text-gray-400 group-hover:text-slate-300 relative z-10" />
-                              )}
-                            </Button>
-                          </TableCell>
-                          <TableCell className="table-cell">
-                            <div className="space-y-1">
-                              <p className="font-medium text-white">{release.title}</p>
-                              <p className="text-xs text-gray-500">
-                                {new Date(release.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="table-cell text-gray-400">{release.artist_name}</TableCell>
-                          <TableCell className="table-cell">{getStatusBadge(release.status)}</TableCell>
-                          <TableCell className="table-cell text-right">
-                            <div className="flex flex-col items-end">
-                              <span className="font-semibold text-white">{formatNumber(release.streams)}</span>
-                              <span className="text-xs text-gray-500">streams</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="table-cell text-right">
-                            <div className="flex flex-col items-end">
-                              <span className="font-semibold text-white">${(release.revenue || 0).toFixed(2)}</span>
-                              <span className="text-xs text-gray-500">earned</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="table-cell text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="w-8 h-8 transition-all duration-300 transform hover:scale-110 active:scale-95"
-                                  onClick={() => triggerHaptic("light")}
-                                >
-                                  <IconComponent name="moreHorizontal" className="w-4 h-4 text-gray-400" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="bg-gray-900/95 border-gray-700/50 backdrop-blur-xl animate-fade-in-scale"
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop Views - Grid or List */}
+                    {viewMode === 'grid' ? (
+                      /* Grid View */
+                      <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredReleases.map((release, index) => (
+                          <div
+                            key={release.id}
+                            className="card-dark p-4 hover-lift cursor-pointer group"
+                            onClick={() => router.push(`/releases/${release.id}`)}
+                            style={{ animationDelay: `${index * 0.1}s` }}
+                          >
+                            {/* Cover Image */}
+                            <div className="relative mb-4 w-full aspect-square">
+                              <ReleaseImage
+                                src={release.cover_art_url}
+                                alt={release.title}
+                                size="xl"
+                                className="w-full h-full object-cover rounded-lg"
+                              />
+                              {/* Play Button Overlay */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handlePlayPause(release.id, release.audio_url)
+                                }}
+                                disabled={!release.audio_url || audioLoading === release.id}
+                                className="cursor-pointer absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg disabled:cursor-not-allowed"
                               >
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    triggerHaptic("light")
+                                {audioLoading === release.id ? (
+                                  <IconComponent name="volume" className="w-12 h-12 text-amber-400 animate-pulse" />
+                                ) : currentlyPlaying === release.id ? (
+                                  <IconComponent name="pause" className="w-12 h-12 text-white" />
+                                ) : (
+                                  <IconComponent name="play" className="w-12 h-12 text-white" />
+                                )}
+                              </button>
+                              {/* Status Badge */}
+                              {release.status === 'live' && (
+                                <div className="absolute top-2 left-2">
+                                  {getStatusBadge(release.status)}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Release Info */}
+                            <div className="space-y-3">
+                              <div>
+                                <h3 className="font-bold text-white text-lg truncate">{release.title}</h3>
+                                <p className="text-gray-400 text-sm truncate">{release.artist_name}</p>
+                              </div>
+
+                              {/* Stats */}
+                              <div className="flex justify-between text-sm text-gray-400">
+                                <div>
+                                  <p className="text-gray-500">Streams</p>
+                                  <p className="text-white font-semibold">{formatNumber(release.streams)}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-gray-500">Revenue</p>
+                                  <p className="text-white font-semibold">${(release.revenue || 0).toFixed(2)}</p>
+                                </div>
+                              </div>
+
+                              {/* Status Badge */}
+                              {release.status !== 'live' && (
+                                <div className="pt-2 border-t border-gray-800">
+                                  {getStatusBadge(release.status)}
+                                </div>
+                              )}
+
+                              {/* Actions */}
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
                                     router.push(`/releases/${release.id}`)
                                   }}
-                                  className="hover:bg-gray-800/50 transition-all duration-300 group"
                                 >
-                                  <IconComponent name="edit" className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:scale-110" />
+                                  <IconComponent name="edit" className="w-4 h-4 mr-2" />
                                   Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    triggerHaptic("light")
-                                    router.push(`/analytics?release=${release.id}`)
-                                  }}
-                                  className="hover:bg-gray-800/50 transition-all duration-300 group"
-                                >
-                                  <IconComponent name="barChart" className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:scale-110" />
-                                  View Analytics
-                                </DropdownMenuItem>
-                                <div className="px-2 py-1">
-                                  <SecureReleaseDelete
-                                    releaseId={release.id}
-                                    releaseTitle={release.title}
-                                    onRequestSubmitted={() => {
-                                      triggerHaptic("medium")
-                                      fetchReleases() // Refresh the list
-                                    }}
-                                  />
-                                </div>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-20">
-                          <div className="flex flex-col items-center space-y-6 animate-fade-in-scale">
-                            <div className="w-20 h-20 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-full flex items-center justify-center">
-                              <IconComponent name="music" className="w-10 h-10 text-gray-400" />
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="outline" size="sm" className="cursor-pointer">
+                                      <IconComponent name="moreHorizontal" className="w-4 h-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="bg-gray-900/95 border-gray-700/50 backdrop-blur-xl">
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        router.push(`/analytics?release=${release.id}`)
+                                      }}
+                                      className="hover:bg-gray-800/50 cursor-pointer"
+                                    >
+                                      <IconComponent name="barChart" className="w-4 h-4 mr-2" />
+                                      Analytics
+                                    </DropdownMenuItem>
+                                    <div className="px-2 py-1">
+                                      <SecureReleaseDelete
+                                        releaseId={release.id}
+                                        releaseTitle={release.title}
+                                        onRequestSubmitted={() => {
+                                          triggerHaptic("medium")
+                                          fetchReleases()
+                                        }}
+                                      />
+                                    </div>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
-                            <div className="space-y-2">
-                              <h3 className="text-xl font-semibold text-white">No releases found</h3>
-                              <p className="text-gray-500">Get started by uploading your first track.</p>
-                            </div>
-                            <Button
-                              onClick={() => {
-                                triggerHaptic("medium")
-                                router.push("/upload")
-                              }}
-                              className="button-primary group"
-                            >
-                              <IconComponent name="addCircle" className="mr-2 h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
-                              Upload Release
-                            </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        ))}
+                      </div>
+                    ) : (
+                      /* List View (Table) */
+                      <div className="hidden md:block table-dark overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-gray-800 hover:bg-gray-900/50">
+                              <TableHead className="table-header">Cover</TableHead>
+                              <TableHead className="table-header w-[60px]">Preview</TableHead>
+                              <TableHead className="table-header">Title</TableHead>
+                              <TableHead className="table-header">Artist</TableHead>
+                              <TableHead className="table-header">Status</TableHead>
+                              <TableHead className="table-header text-right">Streams</TableHead>
+                              <TableHead className="table-header text-right">Revenue</TableHead>
+                              <TableHead className="table-header text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredReleases.map((release, index) => (
+                              <TableRow
+                                key={release.id}
+                                className="table-row stagger-item hover-lift cursor-pointer"
+                                style={{ animationDelay: `${index * 0.1}s` }}
+                                onClick={(e) => {
+                                  if ((e.target as HTMLElement).closest('.dropdown-menu-trigger, button')) {
+                                    return
+                                  }
+                                  router.push(`/releases/${release.id}`)
+                                }}
+                              >
+                                <TableCell className="table-cell">
+                                  <div className="relative group">
+                                    <ReleaseImage
+                                      src={release.cover_art_url}
+                                      alt={release.title}
+                                      size="sm"
+                                      className="w-12 h-12 rounded-lg transition-transform duration-300 group-hover:scale-110"
+                                    />
+                                    <div className="absolute inset-0 bg-black/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                      <IconComponent name="view" className="w-4 h-4 text-white" />
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="table-cell">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-10 h-10 hover:bg-gray-800/50 transition-all duration-300 transform hover:scale-110 active:scale-95 relative overflow-hidden group cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handlePlayPause(release.id, release.audio_url)
+                                    }}
+                                    disabled={!release.audio_url || audioLoading === release.id}
+                                  >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-800/10 to-gray-700/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    {audioLoading === release.id ? (
+                                      <IconComponent name="volume" className="w-4 h-4 text-amber-400 animate-pulse relative z-10" />
+                                    ) : currentlyPlaying === release.id ? (
+                                      <IconComponent name="pause" className="w-4 h-4 text-slate-400 relative z-10" />
+                                    ) : (
+                                      <IconComponent name="play" className="w-4 h-4 text-gray-400 group-hover:text-slate-300 relative z-10" />
+                                    )}
+                                  </Button>
+                                </TableCell>
+                                <TableCell className="table-cell">
+                                  <div className="space-y-1">
+                                    <p className="font-medium text-white">{release.title}</p>
+                                    <p className="text-xs text-gray-500">
+                                      {new Date(release.created_at).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="table-cell text-gray-400">{release.artist_name}</TableCell>
+                                <TableCell className="table-cell">{getStatusBadge(release.status)}</TableCell>
+                                <TableCell className="table-cell text-right">
+                                  <div className="flex flex-col items-end">
+                                    <span className="font-semibold text-white">{formatNumber(release.streams)}</span>
+                                    <span className="text-xs text-gray-500">streams</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="table-cell text-right">
+                                  <div className="flex flex-col items-end">
+                                    <span className="font-semibold text-white">${(release.revenue || 0).toFixed(2)}</span>
+                                    <span className="text-xs text-gray-500">earned</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="table-cell text-right">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="w-8 h-8 transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer"
+                                        onClick={() => triggerHaptic("light")}
+                                      >
+                                        <IconComponent name="moreHorizontal" className="w-4 h-4 text-gray-400" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      align="end"
+                                      className="bg-gray-900/95 border-gray-700/50 backdrop-blur-xl animate-fade-in-scale"
+                                    >
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          triggerHaptic("light")
+                                          router.push(`/releases/${release.id}`)
+                                        }}
+                                        className="hover:bg-gray-800/50 transition-all duration-300 group cursor-pointer"
+                                      >
+                                        <IconComponent name="edit" className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:scale-110" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          triggerHaptic("light")
+                                          router.push(`/analytics?release=${release.id}`)
+                                        }}
+                                        className="hover:bg-gray-800/50 transition-all duration-300 group cursor-pointer"
+                                      >
+                                        <IconComponent name="barChart" className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:scale-110" />
+                                        View Analytics
+                                      </DropdownMenuItem>
+                                      <div className="px-2 py-1">
+                                        <SecureReleaseDelete
+                                          releaseId={release.id}
+                                          releaseTitle={release.title}
+                                          onRequestSubmitted={() => {
+                                            triggerHaptic("medium")
+                                            fetchReleases()
+                                          }}
+                                        />
+                                      </div>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     )}
-                  </TableBody>
-                </Table>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </main>
