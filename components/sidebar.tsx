@@ -99,14 +99,11 @@ function ExpandedSidebarContent({ onItemClick }: { onItemClick?: () => void } = 
       {navigation.map((item, index) => {
         const isActive = pathname === item.href
         return (
-          <div
+          <Link
             key={item.name}
-            onClick={() => {
-              onItemClick?.()
-              router.push(item.href)
-            }}
+            href={item.href}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg group relative transition-all duration-200 cursor-pointer",
+              "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg group relative transition-all duration-200",
               isActive
                 ? "bg-white/10 text-white shadow-sm border border-white/10"
                 : "text-gray-400 hover:text-white hover:bg-white/5 hover:border-transparent border border-transparent",
@@ -119,19 +116,16 @@ function ExpandedSidebarContent({ onItemClick }: { onItemClick?: () => void } = 
             {isActive && (
               <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
             )}
-          </div>
+          </Link>
         )
       })}
       
       {/* Support at bottom */}
       <div className="mt-auto pt-4 border-t border-white/5">
-        <div
-          onClick={() => {
-            onItemClick?.()
-            router.push(supportNav.href)
-          }}
+        <Link
+          href={supportNav.href}
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg group relative transition-all duration-200 cursor-pointer",
+            "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg group relative transition-all duration-200",
             pathname === supportNav.href
               ? "bg-white/10 text-white shadow-sm border border-white/10"
               : "text-gray-400 hover:text-white hover:bg-white/5 hover:border-transparent border border-transparent",
@@ -142,7 +136,7 @@ function ExpandedSidebarContent({ onItemClick }: { onItemClick?: () => void } = 
           {pathname === supportNav.href && (
             <div className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
           )}
-        </div>
+        </Link>
       </div>
     </nav>
   )
@@ -150,26 +144,35 @@ function ExpandedSidebarContent({ onItemClick }: { onItemClick?: () => void } = 
 
 export function Sidebar({ 
   className,
-  collapsed = false,
-  onToggle,
   mobileOpen = false,
   onMobileClose
 }: { 
   className?: string
-  collapsed?: boolean
-  onToggle?: () => void  
   mobileOpen?: boolean
   onMobileClose?: () => void
 }) {
   const [isMounted, setIsMounted] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const [mobileCollapsed, setMobileCollapsed] = useState(false)
   const pathname = usePathname()
   const mobileMenuRef = useRef<HTMLDivElement>(null)
   
-  // Safe mounting for client-side only rendering
+  // Safe mounting for client-side only rendering and load from localStorage
   useEffect(() => {
     setIsMounted(true)
+    // Load collapsed state from localStorage
+    const savedCollapsedState = localStorage.getItem('sidebarCollapsed')
+    if (savedCollapsedState !== null) {
+      setCollapsed(savedCollapsedState === 'true')
+    }
   }, [])
+  
+  // Save to localStorage whenever collapsed state changes
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('sidebarCollapsed', collapsed.toString())
+    }
+  }, [collapsed, isMounted])
   
   // Reset mobile collapsed state when sidebar closes
   useEffect(() => {
@@ -222,12 +225,17 @@ export function Sidebar({
 
   if (!isMounted) return null
 
+  const handleToggleCollapse = () => {
+    console.log('Toggling sidebar collapse, current state:', collapsed)
+    setCollapsed(!collapsed)
+  }
+
   return (
     <>
       {/* Desktop Sidebar - Hidden on mobile */}
       <div
         className={cn(
-          "hidden md:flex flex-col h-full bg-black/95 border-r border-white/10 backdrop-blur-xl transition-all duration-300 ease-out flex-shrink-0",
+          "hidden md:flex flex-col fixed left-0 top-0 h-screen bg-black/95 border-r border-white/10 backdrop-blur-xl transition-all duration-300 ease-out z-40",
           collapsed ? "w-20" : "w-64",
           className,
         )}
@@ -238,7 +246,13 @@ export function Sidebar({
           collapsed ? "justify-center" : "justify-between"
         )}>
           {collapsed ? (
-            <div className="w-12 h-12 flex items-center justify-center">
+            <button
+              onClick={handleToggleCollapse}
+              className="w-12 h-12 flex items-center cursor-pointer justify-center hover:bg-white/5 rounded-lg transition-all duration-200"
+              aria-label="Expand sidebar"
+              type="button"
+              title="Expand sidebar"
+            >
               <Image
                 src="/loaders/custom-loader.png"
                 alt="Logo"
@@ -246,7 +260,7 @@ export function Sidebar({
                 height={48}
                 className="rounded-sm"
               />
-            </div>
+            </button>
           ) : (
             <>
               <Image src="/logo.png" alt="ONE Logo" width={120} height={40} className="rounded-lg" />
@@ -255,7 +269,7 @@ export function Sidebar({
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  onToggle?.()
+                  handleToggleCollapse()
                 }}
                 className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
                 aria-label="Collapse sidebar"
@@ -276,7 +290,7 @@ export function Sidebar({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onToggle?.()
+              handleToggleCollapse()
             }}
             className={cn(
               "text-gray-400 hover:text-white hover:bg-white/5 transition-all duration-200 rounded-lg flex items-center",
@@ -284,6 +298,7 @@ export function Sidebar({
             )}
             type="button"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <icons.chevronRight className={cn("h-4 w-4 transition-transform duration-200", !collapsed && "rotate-180")} />
             {!collapsed && <span className="ml-2 text-sm font-medium">Collapse</span>}
@@ -301,6 +316,11 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Spacer div to push content when sidebar is visible */}
+      <div className={cn(
+        "hidden md:block transition-all duration-300",
+        collapsed ? "w-20" : "w-64"
+      )} />
     </>
   )
 }

@@ -287,11 +287,11 @@ function DashboardContent() {
   return (
     <div className="flex min-h-screen bg-slate-950">
       <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => {
-          console.log('Desktop sidebar toggle called, current state:', sidebarCollapsed)
-          setSidebarCollapsed(!sidebarCollapsed)
-        }}
+        // collapsed={sidebarCollapsed}
+        // onToggle={() => {
+        //   console.log('Desktop sidebar toggle called, current state:', sidebarCollapsed)
+        //   setSidebarCollapsed(!sidebarCollapsed)
+        // }}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => {
           console.log('Mobile sidebar close called, setting to false')
