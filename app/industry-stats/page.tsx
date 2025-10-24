@@ -250,8 +250,8 @@ export default function IndustryStatsPage() {
   return (
     <div className="flex min-h-screen bg-gray-950">
       <Sidebar 
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        // collapsed={sidebarCollapsed}
+        // onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
       />
