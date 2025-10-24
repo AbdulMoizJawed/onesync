@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import CustomLoader from "@/components/ui/custom-loader";
 import {
   Search,
-  Filter,
   Play,
   Pause,
   Download,
@@ -18,18 +17,19 @@ import {
   Clock,
   Music,
   Headphones,
-  Zap,
-  Award,
   Volume2,
-  Star,
   ShoppingCart,
   AlertCircle,
   Loader2,
+  Grid,
+  List,
+  Eye,
 } from "lucide-react";
 import Image from "next/image";
 import { createClient } from "@supabase/supabase-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { useRouter } from "next/navigation";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -51,15 +51,19 @@ interface Beat {
   tags?: string[];
   audio_url: string;
   waveform_url?: string;
+  duration?: number;
   price: number;
   license_type: string;
   approval_status: string;
+  admin_notes?: string;
   is_featured: boolean;
   play_count: number;
   purchase_count: number;
   user_id: string;
   created_at: string;
   updated_at: string;
+  approved_at?: string;
+  approved_by?: string;
 }
 
 interface Producer {
@@ -118,12 +122,10 @@ function AudioPlayerProvider({ children }: { children: React.ReactNode }) {
   const togglePlay = (beatId: string, audioUrl: string) => {
     if (!audioRef.current) return;
 
-    // If clicking the same beat that's playing, pause it
     if (currentBeatId === beatId && isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      // If switching to a different beat, load and play it
       if (currentBeatId !== beatId) {
         audioRef.current.src = audioUrl;
         audioRef.current.load();
@@ -338,14 +340,14 @@ function PaymentModal({ beat, producer, onClose, onSuccess }) {
                   onClick={onClose}
                   disabled={loading}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 cursor-pointer "
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handlePayment}
                   disabled={loading || !stripe || !elements}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 cursor-pointer "
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
@@ -368,7 +370,7 @@ function PaymentModal({ beat, producer, onClose, onSuccess }) {
   );
 }
 
-// Beat Card Component
+// Beat Card Component (Grid View)
 function BeatCard({
   beat,
   isPurchased,
@@ -380,24 +382,31 @@ function BeatCard({
   onPurchaseClick: (beat: Beat) => void;
   onDownload: (beat: Beat) => void;
 }) {
+  const router = useRouter();
   const { currentBeatId, isPlaying, togglePlay } = useAudioPlayer();
   
-  // Check if THIS specific beat is currently playing
   const isThisBeatPlaying = currentBeatId === beat.id && isPlaying;
 
-  const handlePlayPause = () => {
+  const handlePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation();
     togglePlay(beat.id, beat.audio_url);
   };
 
+  const handleCardClick = () => {
+    router.push(`/beats/${beat.id}`);
+  };
+
   return (
-    <Card className={`bg-gray-900 border-gray-800 hover:border-purple-500 transition-all hover:scale-105 group ${
-      isThisBeatPlaying ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''
-    }`}>
+    <Card 
+      className={`bg-gray-900 border-gray-800 hover:border-purple-500 transition-all hover:scale-105 group cursor-pointer ${
+        isThisBeatPlaying ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''
+      }`}
+      onClick={handleCardClick}
+    >
       <CardContent className="p-6">
-        {/* Beat Cover */}
         <div className="relative mb-4">
           <div
-            className="w-full h-48 bg-gradient-to-br  from-purple-600 to-blue-600 rounded-lg flex items-center justify-center relative overflow-hidden cursor-pointer group/play"
+            className="w-full h-48 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center relative overflow-hidden cursor-pointer group/play"
             onClick={handlePlayPause}
           >
             {beat.waveform_url ? (
@@ -411,7 +420,7 @@ function BeatCard({
             ) : (
               <Music className="w-12 h-12 text-white" />
             )}
-            <button className={`absolute inset-0 flex items-center justify-center cursor-pointer transition-opacity ${
+            <button className={`absolute inset-0 flex items-center justify-center transition-opacity cursor-pointer  ${
               isThisBeatPlaying 
                 ? 'bg-black/60' 
                 : 'bg-black/40 opacity-0 group-hover/play:opacity-100'
@@ -436,7 +445,6 @@ function BeatCard({
           </div>
         </div>
 
-        {/* Beat Info */}
         <div className="space-y-3">
           <div>
             <h3 className="font-bold text-white text-lg">{beat.title}</h3>
@@ -447,7 +455,6 @@ function BeatCard({
             )}
           </div>
 
-          {/* Tags */}
           {beat.tags && beat.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {beat.tags.slice(0, 3).map((tag) => (
@@ -462,7 +469,6 @@ function BeatCard({
           )}
         </div>
 
-        {/* Beat Details */}
         <div className="flex justify-between text-sm text-gray-400">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
@@ -475,14 +481,12 @@ function BeatCard({
           </span>
         </div>
 
-        {/* License Type */}
         <div className="text-sm text-gray-400">
           <span className="inline-block px-2 py-1 bg-gray-800 rounded">
             {beat.license_type}
           </span>
         </div>
 
-        {/* Price & Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-800">
           <span className="text-2xl font-bold text-white">
             ${beat.price.toFixed(2)}
@@ -491,23 +495,175 @@ function BeatCard({
             <Button
               size="sm"
               variant="outline"
-              className="border-gray-700 text-gray-300 hover:text-white"
+              className="border-gray-700 text-gray-300 hover:text-white cursor-pointer "
+              onClick={(e) => e.stopPropagation()}
             >
               <Heart className="w-4 h-4" />
             </Button>
             {isPurchased ? (
               <Button
                 size="sm"
-                className="bg-green-600 hover:bg-green-700"
-                onClick={() => onDownload(beat)}
+                className="bg-green-600 hover:bg-green-700 cursor-pointer "
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload(beat);
+                }}
               >
                 <Download className="w-4 h-4" />
               </Button>
             ) : (
               <Button
                 size="sm"
-                className="bg-purple-600 hover:bg-purple-700"
-                onClick={() => onPurchaseClick(beat)}
+                className="bg-purple-600 hover:bg-purple-700 cursor-pointer "
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPurchaseClick(beat);
+                }}
+              >
+                <ShoppingCart className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Beat List Item Component (List View)
+function BeatListItem({
+  beat,
+  isPurchased,
+  onPurchaseClick,
+  onDownload,
+}: {
+  beat: Beat;
+  isPurchased: boolean;
+  onPurchaseClick: (beat: Beat) => void;
+  onDownload: (beat: Beat) => void;
+}) {
+  const router = useRouter();
+  const { currentBeatId, isPlaying, togglePlay } = useAudioPlayer();
+  
+  const isThisBeatPlaying = currentBeatId === beat.id && isPlaying;
+
+  const handlePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    togglePlay(beat.id, beat.audio_url);
+  };
+
+  const handleRowClick = () => {
+    router.push(`/beats/${beat.id}`);
+  };
+
+  return (
+    <Card 
+      className={`bg-gray-900 border-gray-800 hover:border-purple-500 transition-all cursor-pointer ${
+        isThisBeatPlaying ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''
+      }`}
+      onClick={handleRowClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          {/* Play Button */}
+          <button
+            onClick={handlePlayPause}
+            className=" cursor-pointer  w-12 h-12 flex items-center justify-center bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+          >
+            {isThisBeatPlaying ? (
+              <Pause className="w-5 h-5 text-white" />
+            ) : (
+              <Play className="w-5 h-5 text-white" />
+            )}
+          </button>
+
+          {/* Waveform Thumbnail */}
+          <div className="w-16 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded flex items-center justify-center overflow-hidden">
+            {beat.waveform_url ? (
+              <Image
+                src={beat.waveform_url}
+                alt={beat.title}
+                className="w-full h-full object-cover"
+                width={64}
+                height={48}
+              />
+            ) : (
+              <Music className="w-6 h-6 text-white" />
+            )}
+          </div>
+
+          {/* Beat Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-white text-lg truncate">{beat.title}</h3>
+              {beat.is_featured && (
+                <span className="bg-yellow-500 text-black px-2 py-0.5 rounded text-xs font-bold">
+                  FEATURED
+                </span>
+              )}
+              {isThisBeatPlaying && (
+                <span className="bg-purple-600 text-white px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1">
+                  <Volume2 className="w-3 h-3" />
+                  PLAYING
+                </span>
+              )}
+            </div>
+            <p className="text-gray-400 text-sm truncate">{beat.genre}</p>
+          </div>
+
+          {/* Beat Stats */}
+          <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
+            <span className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              {beat.bpm} BPM
+            </span>
+            {beat.key && <span>{beat.key}</span>}
+            <span className="flex items-center gap-1">
+              <Headphones className="w-4 h-4" />
+              {beat.play_count}
+            </span>
+          </div>
+
+          {/* Price & Actions */}
+          <div className="flex items-center gap-3">
+            <span className="text-xl font-bold text-white">
+              ${beat.price.toFixed(2)}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-gray-700 text-gray-300 hover:text-white cursor-pointer "
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Heart className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-gray-700 text-gray-300 hover:text-white cursor-pointer "
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            {isPurchased ? (
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 cursor-pointer "
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload(beat);
+                }}
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700 cursor-pointer "
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPurchaseClick(beat);
+                }}
               >
                 <ShoppingCart className="w-4 h-4" />
               </Button>
@@ -529,9 +685,8 @@ export default function BeatMarketplace() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState<Beat | null>(null);
   const [purchasedBeats, setPurchasedBeats] = useState<Set<string>>(new Set());
-  const [producersMap, setProducersMap] = useState<Record<string, Producer>>(
-    {}
-  );
+  const [producersMap, setProducersMap] = useState<Record<string, Producer>>({});
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Load beats from Supabase
   useEffect(() => {
@@ -712,12 +867,36 @@ export default function BeatMarketplace() {
             {/* Hero */}
             <div className="bg-gray-900 py-12">
               <div className="container mx-auto px-4">
-                <h1 className="text-4xl font-bold text-white mb-4">
-                  Premium Beats
-                </h1>
-                <p className="text-gray-400 mb-6">
-                  Discover and purchase high-quality beats
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h1 className="text-4xl font-bold text-white mb-2">
+                      Premium Beats
+                    </h1>
+                    <p className="text-gray-400">
+                      Discover and purchase high-quality beats
+                    </p>
+                  </div>
+                  
+                  {/* View Mode Toggle */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                      className={viewMode === 'grid' ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer ' : ' '}
+                    >
+                      <Grid className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className={viewMode === 'list' ? 'bg-purple-600 hover:bg-purple-700 cursor-pointer ' : ''}
+                    >
+                      <List className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
 
                 <div className="relative max-w-md mb-6">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -735,7 +914,7 @@ export default function BeatMarketplace() {
                     <button
                       key={genre}
                       onClick={() => setSelectedGenre(genre)}
-                      className={`px-4 py-2 rounded-lg transition-all ${
+                      className={`px-4 py-2 rounded-lg transition-all cursor-pointer  ${
                         selectedGenre === genre
                           ? "bg-purple-600 text-white"
                           : "bg-gray-800 text-gray-300 hover:bg-gray-700"
@@ -755,17 +934,33 @@ export default function BeatMarketplace() {
                   <p className="text-gray-400 text-lg">No beats found</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {beats.map((beat) => (
-                    <BeatCard
-                      key={beat.id}
-                      beat={beat}
-                      isPurchased={purchasedBeats.has(beat.id)}
-                      onPurchaseClick={setShowPaymentModal}
-                      onDownload={handleDownload}
-                    />
-                  ))}
-                </div>
+                <>
+                  {viewMode === 'grid' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {beats.map((beat) => (
+                        <BeatCard
+                          key={beat.id}
+                          beat={beat}
+                          isPurchased={purchasedBeats.has(beat.id)}
+                          onPurchaseClick={setShowPaymentModal}
+                          onDownload={handleDownload}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {beats.map((beat) => (
+                        <BeatListItem
+                          key={beat.id}
+                          beat={beat}
+                          isPurchased={purchasedBeats.has(beat.id)}
+                          onPurchaseClick={setShowPaymentModal}
+                          onDownload={handleDownload}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </main>
